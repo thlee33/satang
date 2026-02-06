@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
   X, Download, RefreshCw, ChevronLeft, ChevronRight,
@@ -32,17 +32,17 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] p-0">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border-default">
-          <h3 className="text-sm font-semibold text-text-primary truncate">
+        <DialogHeader className="flex flex-row items-center justify-between px-4 py-3 border-b border-border-default space-y-0">
+          <DialogTitle className="text-sm font-semibold text-text-primary truncate">
             {output.title}
-          </h3>
+          </DialogTitle>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleDownload}>
               <Download className="w-4 h-4 mr-1" />
               다운로드
             </Button>
           </div>
-        </div>
+        </DialogHeader>
 
         {/* Content */}
         <div className="relative flex items-center justify-center min-h-[400px] bg-gray-50 p-4">

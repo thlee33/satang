@@ -139,14 +139,32 @@ supabase/migrations/00002_add_users_insert_policy.sql
 
 #### 4. Storage 버킷 설정
 
-Supabase 대시보드 → **Storage**에서 아래 버킷을 생성합니다.
+Supabase 대시보드 → **Storage**에서 버킷을 생성합니다.
 
-| 버킷명 | 공개 여부 | 용도 |
-|--------|-----------|------|
-| `sources` | Private | 소스 파일 (PDF 등) 저장 |
-| `studio` | Public | 생성된 인포그래픽/슬라이드 이미지 |
+**`sources` 버킷 (Private)**
 
-`studio` 버킷의 RLS 정책 (SQL Editor에서 실행):
+소스 파일(PDF 등)을 저장합니다. Private 버킷으로 생성합니다.
+
+```sql
+-- 인증된 사용자 업로드 허용
+CREATE POLICY "sources_insert" ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'sources');
+
+-- 본인 파일만 읽기 허용
+CREATE POLICY "sources_select" ON storage.objects
+  FOR SELECT TO authenticated
+  USING (bucket_id = 'sources' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- 본인 파일만 삭제 허용
+CREATE POLICY "sources_delete" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'sources' AND auth.uid()::text = (storage.foldername(name))[1]);
+```
+
+**`studio` 버킷 (Public)**
+
+생성된 인포그래픽/슬라이드 이미지를 저장합니다. Public 버킷으로 생성합니다.
 
 ```sql
 -- 인증된 사용자 업로드 허용
@@ -158,6 +176,11 @@ CREATE POLICY "studio_insert" ON storage.objects
 CREATE POLICY "studio_select" ON storage.objects
   FOR SELECT TO public
   USING (bucket_id = 'studio');
+
+-- 본인 파일만 삭제 허용
+CREATE POLICY "studio_delete" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'studio' AND auth.uid()::text = (storage.foldername(name))[1]);
 ```
 
 ### 실행

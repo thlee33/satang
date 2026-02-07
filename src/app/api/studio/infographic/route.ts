@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { generateInfographicImage } from "@/lib/ai/nano-banana";
 import { generateText } from "@/lib/ai/gemini";
 
@@ -61,7 +61,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate in background
+    // Generate in background with service role client (request context independent)
+    const adminClient = await createServiceRoleClient();
     (async () => {
       try {
         // Summarize sources for infographic content
@@ -87,18 +88,18 @@ export async function POST(request: Request) {
         const filePath = `${user.id}/outputs/${output.id}.${ext}`;
         const imageBuffer = Buffer.from(imageData, "base64");
 
-        await supabase.storage
-          .from("sources")
+        await adminClient.storage
+          .from("studio")
           .upload(filePath, imageBuffer, {
             contentType: mimeType,
           });
 
         const {
           data: { publicUrl },
-        } = supabase.storage.from("sources").getPublicUrl(filePath);
+        } = adminClient.storage.from("studio").getPublicUrl(filePath);
 
         // Update output with image URL
-        await supabase
+        await adminClient
           .from("studio_outputs")
           .update({
             image_urls: [publicUrl],
@@ -107,7 +108,7 @@ export async function POST(request: Request) {
           .eq("id", output.id);
       } catch (error) {
         console.error("Infographic generation error:", error);
-        await supabase
+        await adminClient
           .from("studio_outputs")
           .update({
             generation_status: "failed",

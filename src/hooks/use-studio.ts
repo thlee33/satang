@@ -20,6 +20,12 @@ export function useStudioOutputs(notebookId: string) {
       return data as StudioOutput[];
     },
     enabled: !!notebookId,
+    refetchInterval: (query) => {
+      const hasGenerating = query.state.data?.some(
+        (o) => o.generation_status === "generating"
+      );
+      return hasGenerating ? 3000 : false;
+    },
   });
 }
 

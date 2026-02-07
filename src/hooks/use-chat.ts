@@ -41,8 +41,12 @@ export function useSendMessage(notebookId: string) {
       const optimisticMessage: ChatMessage = {
         id: `temp-${Date.now()}`,
         notebook_id: notebookId,
+        user_id: "",
         role: "user",
         content,
+        citations: [],
+        model: null,
+        tokens_used: null,
         created_at: new Date().toISOString(),
       };
       queryClient.setQueryData<ChatMessage[]>(

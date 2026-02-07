@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { generateSlideImage } from "@/lib/ai/nano-banana";
 import { generateText } from "@/lib/ai/gemini";
 
@@ -61,7 +61,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate in background
+    // Generate in background with service role client (request context independent)
+    const adminClient = await createServiceRoleClient();
     (async () => {
       try {
         const sourceTexts = sources
@@ -131,19 +132,19 @@ ${prompt ? `추가 지시사항: ${prompt}` : ""}
           const filePath = `${user.id}/outputs/${output.id}-slide-${i + 1}.${ext}`;
           const imageBuffer = Buffer.from(imageData, "base64");
 
-          await supabase.storage
-            .from("sources")
+          await adminClient.storage
+            .from("studio")
             .upload(filePath, imageBuffer, { contentType: mimeType });
 
           const {
             data: { publicUrl },
-          } = supabase.storage.from("sources").getPublicUrl(filePath);
+          } = adminClient.storage.from("studio").getPublicUrl(filePath);
 
           imageUrls.push(publicUrl);
         }
 
         // Update output
-        await supabase
+        await adminClient
           .from("studio_outputs")
           .update({
             image_urls: imageUrls,
@@ -153,7 +154,7 @@ ${prompt ? `추가 지시사항: ${prompt}` : ""}
           .eq("id", output.id);
       } catch (error) {
         console.error("Slide generation error:", error);
-        await supabase
+        await adminClient
           .from("studio_outputs")
           .update({
             generation_status: "failed",

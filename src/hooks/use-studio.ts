@@ -93,6 +93,60 @@ export function useGenerateSlides() {
   });
 }
 
+export function useRetryStudioOutput() {
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (output: StudioOutput) => {
+      // Delete the old record
+      await supabase.from("studio_outputs").delete().eq("id", output.id);
+
+      // Re-trigger generation with saved settings
+      const settings = output.settings as Record<string, string>;
+      const endpoint =
+        output.type === "infographic"
+          ? "/api/studio/infographic"
+          : "/api/studio/slides";
+
+      const body =
+        output.type === "infographic"
+          ? {
+              notebookId: output.notebook_id,
+              language: settings.language || "ko",
+              orientation: settings.orientation || "landscape",
+              detailLevel: settings.detailLevel || "standard",
+              prompt: settings.prompt || "",
+            }
+          : {
+              notebookId: output.notebook_id,
+              format: settings.format || "detailed",
+              language: settings.language || "ko",
+              depth: settings.depth || "default",
+              prompt: settings.prompt || "",
+            };
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "재생성 실패");
+      }
+
+      return response.json();
+    },
+    onSuccess: (_, output) => {
+      queryClient.invalidateQueries({
+        queryKey: ["studio-outputs", output.notebook_id],
+      });
+    },
+  });
+}
+
 export function useDeleteStudioOutput() {
   const supabase = createClient();
   const queryClient = useQueryClient();

@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   Headphones, Video, Brain, FileText, CreditCard, HelpCircle,
   BarChart3, Presentation, Table, Pencil, MoreVertical, Trash2,
-  Loader2, StickyNote, Image,
+  Loader2, StickyNote, Image, AlertCircle, RefreshCw,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useStudioOutputs, useDeleteStudioOutput } from "@/hooks/use-studio";
+import { useStudioOutputs, useDeleteStudioOutput, useRetryStudioOutput } from "@/hooks/use-studio";
 import { InfographicModal } from "./infographic-modal";
 import { SlideModal } from "./slide-modal";
 import { ContentViewer } from "./content-viewer";
@@ -64,6 +64,7 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
 
   const { data: outputs = [] } = useStudioOutputs(notebookId);
   const deleteOutput = useDeleteStudioOutput();
+  const retryOutput = useRetryStudioOutput();
 
   const handleTileClick = (type: string, enabled: boolean) => {
     if (!enabled) {
@@ -81,6 +82,21 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
     } catch {
       toast.error("삭제에 실패했습니다.");
     }
+  };
+
+  const handleRetryOutput = async (output: StudioOutput) => {
+    try {
+      await retryOutput.mutateAsync(output);
+      toast.success("재생성을 시작했습니다.");
+    } catch {
+      toast.error("재생성에 실패했습니다.");
+    }
+  };
+
+  const isStuck = (output: StudioOutput) => {
+    if (output.generation_status !== "generating") return false;
+    const elapsed = Date.now() - new Date(output.created_at).getTime();
+    return elapsed > 3 * 60 * 1000; // 3분 이상
   };
 
   return (
@@ -146,8 +162,44 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
                       </p>
                     </div>
 
-                    {output.generation_status === "generating" ? (
+                    {output.generation_status === "generating" && !isStuck(output) ? (
                       <Loader2 className="w-4 h-4 text-brand animate-spin" />
+                    ) : output.generation_status === "failed" || isStuck(output) ? (
+                      <div className="flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4 text-error shrink-0" />
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1 rounded hover:bg-gray-100 cursor-pointer"
+                            >
+                              <MoreVertical className="w-3.5 h-3.5 text-text-muted" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRetryOutput(output);
+                              }}
+                              className="cursor-pointer"
+                            >
+                              <RefreshCw className="w-4 h-4 mr-2" />
+                              재생성
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeletingOutputId(output.id);
+                              }}
+                              className="text-error cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              삭제
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     ) : (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -159,6 +211,16 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRetryOutput(output);
+                            }}
+                            className="cursor-pointer"
+                          >
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            재생성
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={(e) => {
                               e.stopPropagation();

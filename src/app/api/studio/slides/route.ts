@@ -65,6 +65,8 @@ export async function POST(request: Request) {
     const adminClient = await createServiceRoleClient();
     (async () => {
       try {
+        console.log(`[Slides ${output.id}] 생성 시작 - 소스 ${sources.length}개`);
+
         const sourceTexts = sources
           .map(
             (s) => `[${s.title}]\n${(s.extracted_text || "").slice(0, 5000)}`
@@ -81,6 +83,7 @@ export async function POST(request: Request) {
             : "8-12";
 
         // Generate slide outline with Gemini
+        console.log(`[Slides ${output.id}] Gemini 아웃라인 생성 중...`);
         const outlinePrompt = `다음 소스 내용을 기반으로 ${slideCountRange}장의 슬라이드 아웃라인을 JSON 형식으로 생성해주세요.
 
 소스 내용:
@@ -106,6 +109,7 @@ ${prompt ? `추가 지시사항: ${prompt}` : ""}
             { title: "개요", content: "프레젠테이션 개요 슬라이드입니다." },
           ];
         }
+        console.log(`[Slides ${output.id}] 아웃라인 완료 - ${slides.length}장`);
 
         // Determine topic
         const topic = slides[0]?.title || "프레젠테이션";
@@ -115,6 +119,7 @@ ${prompt ? `추가 지시사항: ${prompt}` : ""}
 
         for (let i = 0; i < slides.length; i++) {
           const slide = slides[i];
+          console.log(`[Slides ${output.id}] 슬라이드 ${i + 1}/${slides.length} 이미지 생성 중...`);
 
           const { imageData, mimeType } = await generateSlideImage({
             slideNumber: i + 1,
@@ -141,6 +146,7 @@ ${prompt ? `추가 지시사항: ${prompt}` : ""}
           } = adminClient.storage.from("studio").getPublicUrl(filePath);
 
           imageUrls.push(publicUrl);
+          console.log(`[Slides ${output.id}] 슬라이드 ${i + 1}/${slides.length} 완료`);
         }
 
         // Update output
@@ -152,8 +158,10 @@ ${prompt ? `추가 지시사항: ${prompt}` : ""}
             generation_status: "completed",
           })
           .eq("id", output.id);
+
+        console.log(`[Slides ${output.id}] ✅ 전체 생성 완료 - ${imageUrls.length}장`);
       } catch (error) {
-        console.error("Slide generation error:", error);
+        console.error(`[Slides ${output.id}] ❌ 생성 실패:`, error);
         await adminClient
           .from("studio_outputs")
           .update({

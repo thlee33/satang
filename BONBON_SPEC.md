@@ -1,6 +1,6 @@
 <project_specification>
 
-<project_name>KakaoBook - AI 기반 지식 노트북 & 비주얼 콘텐츠 생성 플랫폼</project_name>
+<project_name>BonBon - AI 기반 지식 노트북 & 비주얼 콘텐츠 생성 플랫폼</project_name>
 
 <!-- ============================================================
      참조 스크린샷 (NotebookLM 원본 UI)
@@ -46,7 +46,7 @@
      ============================================================ -->
 
 <overview>
-KakaoBook은 Google NotebookLM을 모델로 한 AI 기반 지식 관리 및 비주얼 콘텐츠 생성 플랫폼입니다. 사용자가 다양한 소스(PDF, 웹페이지, YouTube, Google Docs, 텍스트, 이미지, 오디오)를 업로드하면, AI가 이를 분석하여 요약, Q&A 채팅, 인포그래픽, 슬라이드, 마인드맵, 보고서 등 다양한 형태의 콘텐츠를 자동 생성합니다.
+BonBon은 Google NotebookLM을 모델로 한 AI 기반 지식 관리 및 비주얼 콘텐츠 생성 플랫폼입니다. 사용자가 다양한 소스(PDF, 웹페이지, YouTube, Google Docs, 텍스트, 이미지, 오디오)를 업로드하면, AI가 이를 분석하여 요약, Q&A 채팅, 인포그래픽, 슬라이드, 마인드맵, 보고서 등 다양한 형태의 콘텐츠를 자동 생성합니다.
 
 핵심 차별화 기능은 Google Nano Banana Pro (Gemini 3 Pro Image) API를 활용한 고품질 인포그래픽 및 슬라이드 이미지 생성입니다. 사용자는 업로드한 소스를 기반으로 프롬프트를 입력하여 자유롭게 인포그래픽과 슬라이드를 생성하고, 생성된 결과물을 편집 및 재생성할 수 있습니다. Nano Banana Pro의 뛰어난 텍스트 렌더링 능력을 활용하여 다국어 텍스트가 포함된 고퀄리티 비주얼 콘텐츠를 제공합니다.
 
@@ -228,7 +228,7 @@ CRITICAL: 인증은 Supabase Auth를 통한 Google OAuth 2.0만 지원합니다.
     <top_navigation_home>
       - 높이: 56px
       - 배경: #FFFFFF, 하단 보더: 1px solid #E5E7EB
-      - 좌측: 로고 아이콘 (28px) + "KakaoBook" 텍스트 (font-size: 18px, font-weight: 700, color: #1F2937)
+      - 좌측: 로고 아이콘 (28px) + "BonBon" 텍스트 (font-size: 18px, font-weight: 700, color: #1F2937)
       - 중앙: 탭 네비게이션 ("전체" | "내 노트북" | "공유 검색함") - 활성 탭: color #6D28D9, border-bottom 2px solid #6D28D9
       - 우측: 검색 아이콘 (20px) + 그리드/리스트 뷰 토글 + "최신 활동순" 정렬 드롭다운 + "새로 만들기" 버튼 (bg: #6D28D9, text: white, rounded-lg, px-4 py-2) + 사용자 아바타 (32px circle)
     </top_navigation_home>
@@ -236,7 +236,7 @@ CRITICAL: 인증은 Supabase Auth를 통한 Google OAuth 2.0만 지원합니다.
     <top_navigation_notebook>
       - 높이: 48px
       - 배경: #FFFFFF, 하단 보더: 1px solid #E5E7EB
-      - 좌측: KakaoBook 로고 아이콘 (클릭 시 홈으로) + 노트북 제목 (editable, font-size: 15px, font-weight: 600)
+      - 좌측: BonBon 로고 아이콘 (클릭 시 홈으로) + 노트북 제목 (editable, font-size: 15px, font-weight: 600)
       - 중앙-우측: "+ 노트북 만들기" 버튼 (bg: #6D28D9, text: white) + "분석" 버튼 + "공유" 버튼 + "설정" 아이콘 + "PRO" 배지 (선택적) + 사용자 아바타
     </top_navigation_notebook>
   </global_layout>
@@ -250,7 +250,7 @@ CRITICAL: 인증은 Supabase Auth를 통한 Google OAuth 2.0만 지원합니다.
       - 로그인 카드: max-width 400px, bg: #FFFFFF, rounded-2xl, shadow-lg, padding 48px
     </layout>
     <content>
-      - KakaoBook 로고 + 이름 (중앙 정렬, 48px 로고)
+      - BonBon 로고 + 이름 (중앙 정렬, 48px 로고)
       - 서비스 설명 텍스트: "AI 기반 지식 노트북" (font-size: 14px, color: #6B7280, margin-top: 8px)
       - Google 로그인 버튼: width 100%, height 48px, border 1px solid #D1D5DB, rounded-lg, Google 로고 + "Google로 계속하기" 텍스트
         - hover: bg #F9FAFB, border-color #9CA3AF
@@ -1477,7 +1477,7 @@ CRITICAL: 인증은 Supabase Auth를 통한 Google OAuth 2.0만 지원합니다.
 
   <project_structure>
     ```
-    kakaobook/
+    bonbon/
     ├── app/
     │   ├── (auth)/
     │   │   ├── login/page.tsx

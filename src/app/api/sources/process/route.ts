@@ -16,7 +16,7 @@ async function extractTextFromPdf(buffer: ArrayBuffer): Promise<string> {
 async function extractTextFromUrl(url: string): Promise<{ title: string; text: string }> {
   const response = await fetch(url, {
     headers: {
-      "User-Agent": "KakaoBook/1.0",
+      "User-Agent": "BonBon/1.0",
     },
   });
 

@@ -29,7 +29,7 @@ export default function LoginPage() {
           <div className="w-12 h-12 bg-brand rounded-xl flex items-center justify-center mb-3">
             <BookOpen className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-xl font-bold text-text-primary">KakaoBook</h1>
+          <h1 className="text-xl font-bold text-text-primary">BonBon</h1>
           <p className="text-sm text-text-tertiary mt-1">
             AI 기반 지식 노트북
           </p>

@@ -1,4 +1,4 @@
-# KakaoBook
+# BonBon
 
 > **Claude Code로 노트북LM 클론 서비스를 기획부터 배포까지 1시간?!**
 
@@ -84,8 +84,8 @@ PDF, 웹페이지 URL, 텍스트 등 다양한 형식의 소스를 노트북에 
 ### 설치
 
 ```bash
-git clone https://github.com/revfactory/kakaobook.git
-cd kakaobook
+git clone https://github.com/revfactory/bonbon.git
+cd bonbon
 npm install
 ```
 

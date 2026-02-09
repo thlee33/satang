@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     // Remove the last message (the one we just inserted)
     const previousMessages = (history || []).slice(0, -1);
 
-    const systemPrompt = `당신은 KakaoBook AI 어시스턴트입니다. 사용자가 업로드한 소스를 기반으로 질문에 답변합니다.
+    const systemPrompt = `당신은 BonBon AI 어시스턴트입니다. 사용자가 업로드한 소스를 기반으로 질문에 답변합니다.
 
 규칙:
 - 소스 내용을 기반으로만 답변하세요.

@@ -81,7 +81,7 @@ export function ChatPanel({ notebookId, notebookTitle }: ChatPanelProps) {
               <div className="flex items-start gap-2 mb-3 text-warning">
                 <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0" />
                 <p className="text-xs text-text-muted">
-                  BonBon은 소스의 내용을 기반으로 응답합니다. 정확하지 않은 정보가 포함될 수 있습니다.
+                  Satang은 소스의 내용을 기반으로 응답합니다. 정확하지 않은 정보가 포함될 수 있습니다.
                 </p>
               </div>
               <h2 className="text-[22px] font-bold text-text-primary mb-2">

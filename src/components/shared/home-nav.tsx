@@ -45,7 +45,7 @@ export function HomeNav({
         <div className="w-7 h-7 bg-brand rounded-lg flex items-center justify-center">
           <BookOpen className="w-4 h-4 text-white" />
         </div>
-        <span className="text-lg font-bold text-text-primary">BonBon</span>
+        <span className="text-lg font-bold text-text-primary">Satang</span>
       </div>
 
       {/* Tabs */}

@@ -20,6 +20,12 @@ export function useSources(notebookId: string) {
       return data as Source[];
     },
     enabled: !!notebookId,
+    refetchInterval: (query) => {
+      const hasProcessing = query.state.data?.some(
+        (s) => s.processing_status === "pending" || s.processing_status === "processing"
+      );
+      return hasProcessing ? 2000 : false;
+    },
   });
 }
 

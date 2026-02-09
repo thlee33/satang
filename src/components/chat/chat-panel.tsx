@@ -5,6 +5,7 @@ import { Send, Square, AlertTriangle, Copy, BookmarkPlus, ThumbsUp, ThumbsDown }
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { useChatMessages, useSendMessage } from "@/hooks/use-chat";
+import { useAddNote } from "@/hooks/use-notes";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ export function ChatPanel({ notebookId, notebookTitle }: ChatPanelProps) {
   const { data: messages = [], isLoading } = useChatMessages(notebookId);
   const { sendMessage, isStreaming, streamingContent, stopStreaming } =
     useSendMessage(notebookId);
+  const addNote = useAddNote();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -143,7 +145,14 @@ export function ChatPanel({ notebookId, notebookTitle }: ChatPanelProps) {
                         <Copy className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => toast.info("메모 저장 기능은 준비 중입니다.")}
+                        onClick={async () => {
+                          try {
+                            await addNote.mutateAsync({ notebookId, content: msg.content });
+                            toast.success("메모에 저장되었습니다.");
+                          } catch {
+                            toast.error("메모 저장에 실패했습니다.");
+                          }
+                        }}
                         className="p-1.5 rounded-md hover:bg-gray-100 text-text-muted cursor-pointer"
                       >
                         <BookmarkPlus className="w-3.5 h-3.5" />

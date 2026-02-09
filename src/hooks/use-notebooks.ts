@@ -114,3 +114,43 @@ export function useDeleteNotebook() {
     },
   });
 }
+
+export function useShareNotebook() {
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const shareToken = crypto.randomUUID();
+      const { data, error } = await supabase
+        .from("notebooks")
+        .update({ is_shared: true, share_token: shareToken })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Notebook;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notebooks"] });
+    },
+  });
+}
+
+export function useUnshareNotebook() {
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("notebooks")
+        .update({ is_shared: false, share_token: null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notebooks"] });
+    },
+  });
+}

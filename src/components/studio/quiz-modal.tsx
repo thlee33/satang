@@ -9,8 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Loader2, BarChart3 } from "lucide-react";
-import { useGenerateInfographic } from "@/hooks/use-studio";
+import { Loader2, HelpCircle } from "lucide-react";
+import { useGenerateQuiz } from "@/hooks/use-studio";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -24,52 +24,33 @@ const LANGUAGES = [
   { value: "de", label: "Deutsch" },
 ];
 
-const ORIENTATIONS = [
-  { value: "landscape", label: "가로" },
-  { value: "portrait", label: "세로" },
-  { value: "square", label: "정사각형" },
+const QUESTION_COUNTS = [
+  { value: 5, label: "5문제" },
+  { value: 10, label: "10문제" },
+  { value: 15, label: "15문제" },
 ];
 
-const DETAIL_LEVELS = [
-  { value: "concise", label: "간결하게" },
-  { value: "standard", label: "표준" },
-  { value: "detailed", label: "상세 (AI)", hasAiBadge: true },
-];
-
-interface InfographicModalProps {
+interface QuizModalProps {
   open: boolean;
   onClose: () => void;
   notebookId: string;
 }
 
-export function InfographicModal({
-  open,
-  onClose,
-  notebookId,
-}: InfographicModalProps) {
+export function QuizModal({ open, onClose, notebookId }: QuizModalProps) {
   const [language, setLanguage] = useState("ko");
-  const [orientation, setOrientation] = useState("landscape");
-  const [detailLevel, setDetailLevel] = useState("standard");
+  const [questionCount, setQuestionCount] = useState(10);
   const [prompt, setPrompt] = useState("");
 
-  const generate = useGenerateInfographic();
+  const generate = useGenerateQuiz();
 
   const handleGenerate = async () => {
     try {
-      await generate.mutateAsync({
-        notebookId,
-        language,
-        orientation,
-        detailLevel,
-        prompt,
-      });
-      toast.success("인포그래픽 생성이 시작되었습니다.");
+      await generate.mutateAsync({ notebookId, language, questionCount, prompt });
+      toast.success("퀴즈 생성이 시작되었습니다.");
       onClose();
       setPrompt("");
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "인포그래픽 생성 실패"
-      );
+      toast.error(error instanceof Error ? error.message : "퀴즈 생성 실패");
     }
   };
 
@@ -78,13 +59,12 @@ export function InfographicModal({
       <DialogContent className="sm:max-w-[520px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-semibold">
-            <BarChart3 className="w-5 h-5" />
-            인포그래픽 맞춤설정
+            <HelpCircle className="w-5 h-5" />
+            퀴즈 맞춤설정
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5">
-          {/* Language */}
           <div>
             <label className="text-[13px] font-medium text-text-secondary block mb-2">
               언어 선택
@@ -95,73 +75,45 @@ export function InfographicModal({
               className="w-full h-9 rounded-lg border border-border-default px-3 text-sm focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none"
             >
               {LANGUAGES.map((l) => (
-                <option key={l.value} value={l.value}>
-                  {l.label}
-                </option>
+                <option key={l.value} value={l.value}>{l.label}</option>
               ))}
             </select>
           </div>
 
-          {/* Orientation */}
           <div>
             <label className="text-[13px] font-medium text-text-secondary block mb-2">
-              방향 선택
+              문제 수
             </label>
             <div className="flex gap-2">
-              {ORIENTATIONS.map((o) => (
+              {QUESTION_COUNTS.map((q) => (
                 <button
-                  key={o.value}
-                  onClick={() => setOrientation(o.value)}
+                  key={q.value}
+                  onClick={() => setQuestionCount(q.value)}
                   className={cn(
                     "flex-1 h-9 rounded-lg border text-sm font-medium transition-colors cursor-pointer",
-                    orientation === o.value
+                    questionCount === q.value
                       ? "bg-gray-100 border-text-primary text-text-primary"
                       : "border-border-default text-text-tertiary hover:bg-gray-50"
                   )}
                 >
-                  {o.label}
+                  {q.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Detail Level */}
           <div>
             <label className="text-[13px] font-medium text-text-secondary block mb-2">
-              세부정보 수준
-            </label>
-            <div className="flex gap-2">
-              {DETAIL_LEVELS.map((d) => (
-                <button
-                  key={d.value}
-                  onClick={() => setDetailLevel(d.value)}
-                  className={cn(
-                    "flex-1 h-9 rounded-lg border text-sm font-medium transition-colors cursor-pointer",
-                    detailLevel === d.value
-                      ? "bg-gray-100 border-text-primary text-text-primary"
-                      : "border-border-default text-text-tertiary hover:bg-gray-50"
-                  )}
-                >
-                  {d.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Prompt */}
-          <div>
-            <label className="text-[13px] font-medium text-text-secondary block mb-2">
-              만들려는 인포그래픽에 대한 설명
+              추가 지시사항
             </label>
             <Textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder='스타일, 색상 또는 강조할 부분 안내: "파란색 색상 테마를 사용하고 3가지 주요 통계를 강조해 줘."'
+              placeholder="퀴즈의 주제나 난이도에 대한 안내를 입력하세요..."
               className="min-h-[80px] max-h-[30vh] resize-y"
             />
           </div>
 
-          {/* Submit */}
           <div className="flex justify-end">
             <Button
               onClick={handleGenerate}
@@ -169,13 +121,8 @@ export function InfographicModal({
               className="bg-brand hover:bg-brand-hover px-6"
             >
               {generate.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  생성 중...
-                </>
-              ) : (
-                "생성"
-              )}
+                <><Loader2 className="w-4 h-4 animate-spin mr-2" />생성 중...</>
+              ) : "생성"}
             </Button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { generateSummary } from "@/lib/ai/gemini";
 
@@ -58,12 +58,6 @@ export async function POST(request: Request) {
     // Handle URL source creation
     if (body.type === "url" && body.url) {
       const { title, text } = await extractTextFromUrl(body.url);
-      let summary: string | undefined;
-      try {
-        summary = await generateSummary(text);
-      } catch {
-        // Summary generation is optional
-      }
 
       const { data: source, error } = await supabase
         .from("sources")
@@ -74,7 +68,6 @@ export async function POST(request: Request) {
           title,
           original_url: body.url,
           extracted_text: text,
-          summary,
           processing_status: "completed",
         })
         .select()
@@ -83,6 +76,20 @@ export async function POST(request: Request) {
       if (error) {
         return NextResponse.json({ error: "소스 생성 실패" }, { status: 500 });
       }
+
+      // Generate summary asynchronously
+      after(async () => {
+        try {
+          const serviceClient = await createServiceRoleClient();
+          const summary = await generateSummary(text);
+          await serviceClient
+            .from("sources")
+            .update({ summary })
+            .eq("id", source.id);
+        } catch {
+          // Summary generation is optional
+        }
+      });
 
       return NextResponse.json(source);
     }
@@ -136,24 +143,31 @@ export async function POST(request: Request) {
           extractedText = source.extracted_text || "";
         }
 
-        // Generate summary
-        let summary: string | undefined;
-        if (extractedText) {
-          try {
-            summary = await generateSummary(extractedText);
-          } catch {
-            // Summary is optional
-          }
-        }
-
+        // Mark as completed immediately after text extraction
         await serviceClient
           .from("sources")
           .update({
             extracted_text: extractedText || source.extracted_text,
-            summary,
             processing_status: "completed",
           })
           .eq("id", body.sourceId);
+
+        // Generate summary asynchronously
+        const sourceId = body.sourceId;
+        if (extractedText) {
+          after(async () => {
+            try {
+              const summary = await generateSummary(extractedText);
+              const adminClient = await createServiceRoleClient();
+              await adminClient
+                .from("sources")
+                .update({ summary })
+                .eq("id", sourceId);
+            } catch {
+              // Summary generation is optional
+            }
+          });
+        }
 
         return NextResponse.json({ status: "completed" });
       } catch (error) {

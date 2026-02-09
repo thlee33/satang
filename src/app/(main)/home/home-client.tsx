@@ -27,6 +27,7 @@ export function HomeClient({ user }: HomeClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: notebooks, isLoading } = useNotebooks();
   const createNotebook = useCreateNotebook();
@@ -59,11 +60,16 @@ export function HomeClient({ user }: HomeClientProps) {
     }
   };
 
-  const filteredNotebooks = notebooks?.filter((nb) => {
-    if (activeTab === "mine") return !nb.is_shared;
-    if (activeTab === "shared") return nb.is_shared;
-    return true;
-  });
+  const filteredNotebooks = notebooks
+    ?.filter((nb) => {
+      if (activeTab === "mine") return !nb.is_shared;
+      if (activeTab === "shared") return nb.is_shared;
+      return true;
+    })
+    ?.filter((nb) => {
+      if (!searchQuery) return true;
+      return nb.title.toLowerCase().includes(searchQuery.toLowerCase());
+    });
 
   return (
     <div className="min-h-screen bg-white">
@@ -74,6 +80,8 @@ export function HomeClient({ user }: HomeClientProps) {
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         onNewNotebook={handleNewNotebook}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
 
       <main className="max-w-[1280px] mx-auto px-6 py-6">

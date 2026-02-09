@@ -1,10 +1,10 @@
 "use client";
 
-import { BookOpen, Grid3X3, List, Search } from "lucide-react";
+import { useState } from "react";
+import { BookOpen, Grid3X3, List, Search, X } from "lucide-react";
 import { UserMenu } from "./user-menu";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 interface HomeNavProps {
   user: {
@@ -17,6 +17,8 @@ interface HomeNavProps {
   viewMode: "grid" | "list";
   onViewModeChange: (mode: "grid" | "list") => void;
   onNewNotebook: () => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }
 
 const tabs = [
@@ -32,7 +34,10 @@ export function HomeNav({
   viewMode,
   onViewModeChange,
   onNewNotebook,
+  searchQuery,
+  onSearchChange,
 }: HomeNavProps) {
+  const [showSearch, setShowSearch] = useState(false);
   return (
     <header className="h-14 border-b border-border-default bg-white flex items-center px-4 gap-4">
       {/* Logo */}
@@ -65,12 +70,35 @@ export function HomeNav({
 
       {/* Actions */}
       <div className="flex items-center gap-2">
-        <button
-          onClick={() => toast.info("검색 기능은 준비 중입니다.")}
-          className="p-2 rounded-md hover:bg-gray-50 text-text-tertiary cursor-pointer"
-        >
-          <Search className="w-5 h-5" />
-        </button>
+        {showSearch ? (
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="노트북 검색..."
+              className="h-9 w-56 pl-9 pr-8 text-sm rounded-lg border border-border-default focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none"
+              autoFocus
+              onBlur={() => { if (!searchQuery) setShowSearch(false); }}
+            />
+            {searchQuery ? (
+              <button
+                onClick={() => { onSearchChange(""); setShowSearch(false); }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-gray-100 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5 text-text-muted" />
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowSearch(true)}
+            className="p-2 rounded-md hover:bg-gray-50 text-text-tertiary cursor-pointer"
+          >
+            <Search className="w-5 h-5" />
+          </button>
+        )}
 
         <div className="flex items-center border border-border-default rounded-md">
           <button

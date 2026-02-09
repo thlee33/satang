@@ -11,7 +11,8 @@ import { NotebookNav } from "@/components/shared/notebook-nav";
 import { SourcesPanel } from "@/components/sources/sources-panel";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { StudioPanel } from "@/components/studio/studio-panel";
-import { useUpdateNotebook } from "@/hooks/use-notebooks";
+import { ShareModal } from "@/components/shared/share-modal";
+import { useUpdateNotebook, useNotebooks } from "@/hooks/use-notebooks";
 import { cn } from "@/lib/utils";
 import type { Notebook } from "@/lib/supabase/types";
 import { toast } from "sonner";
@@ -36,7 +37,10 @@ type MobileTab = (typeof MOBILE_TABS)[number]["id"];
 export function NotebookClient({ notebook, user }: NotebookClientProps) {
   const [title, setTitle] = useState(notebook.title);
   const [mobileTab, setMobileTab] = useState<MobileTab>("chat");
+  const [showShareModal, setShowShareModal] = useState(false);
   const updateNotebook = useUpdateNotebook();
+  const { data: notebooks } = useNotebooks();
+  const currentNotebook = notebooks?.find((nb) => nb.id === notebook.id) || notebook;
 
   const handleTitleChange = async (newTitle: string) => {
     setTitle(newTitle);
@@ -49,7 +53,7 @@ export function NotebookClient({ notebook, user }: NotebookClientProps) {
   };
 
   const handleShare = () => {
-    toast.info("공유 기능은 곧 제공될 예정입니다.");
+    setShowShareModal(true);
   };
 
   return (
@@ -120,6 +124,12 @@ export function NotebookClient({ notebook, user }: NotebookClientProps) {
           })}
         </nav>
       </div>
+
+      <ShareModal
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        notebook={currentNotebook}
+      />
     </div>
   );
 }

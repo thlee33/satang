@@ -172,7 +172,7 @@ export function SlideModal({ open, onClose, notebookId }: SlideModalProps) {
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder='간략한 개요를 추가하거나 청중, 스타일, 강조할 점에 대한 가이드 제공: "단계별 안내에 초점을 둔 대담하고 재미있는 스타일의 초보자용 자료를 만들어 줘."'
-              className="min-h-[80px] resize-y"
+              className="min-h-[80px] max-h-[30vh] resize-y"
             />
           </div>
 

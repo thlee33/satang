@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   Headphones, Video, Brain, FileText, CreditCard, HelpCircle,
   BarChart3, Presentation, Table, Pencil, MoreVertical, Trash2,
-  Loader2, StickyNote, Image, AlertCircle, RefreshCw,
+  Loader2, StickyNote, Image, AlertCircle, RefreshCw, Pin, X, Plus,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -24,8 +24,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useStudioOutputs, useDeleteStudioOutput, useRetryStudioOutput } from "@/hooks/use-studio";
+import { useNotes, useAddNote, useDeleteNote, useTogglePin } from "@/hooks/use-notes";
 import { InfographicModal } from "./infographic-modal";
 import { SlideModal } from "./slide-modal";
+import { MindMapModal } from "./mindmap-modal";
+import { ReportModal } from "./report-modal";
+import { FlashcardModal } from "./flashcard-modal";
+import { QuizModal } from "./quiz-modal";
 import { ContentViewer } from "./content-viewer";
 import { toast } from "sonner";
 import type { StudioOutput } from "@/lib/supabase/types";
@@ -35,10 +40,10 @@ import { ko } from "date-fns/locale";
 const STUDIO_TILES = [
   { type: "audio_overview", label: "AI 오디오 오버뷰", icon: Headphones, bg: "bg-card-sky", enabled: false },
   { type: "video_overview", label: "동영상 개요", icon: Video, bg: "bg-card-sky", enabled: false },
-  { type: "mind_map", label: "마인드맵", icon: Brain, bg: "bg-card-rose", enabled: false },
-  { type: "report", label: "보고서", icon: FileText, bg: "bg-card-rose", enabled: false },
-  { type: "flashcard", label: "플래시카드", icon: CreditCard, bg: "bg-card-emerald", enabled: false },
-  { type: "quiz", label: "퀴즈", icon: HelpCircle, bg: "bg-card-emerald", enabled: false },
+  { type: "mind_map", label: "마인드맵", icon: Brain, bg: "bg-card-rose", enabled: true },
+  { type: "report", label: "보고서", icon: FileText, bg: "bg-card-rose", enabled: true },
+  { type: "flashcard", label: "플래시카드", icon: CreditCard, bg: "bg-card-emerald", enabled: true },
+  { type: "quiz", label: "퀴즈", icon: HelpCircle, bg: "bg-card-emerald", enabled: true },
   { type: "infographic", label: "인포그래픽", icon: BarChart3, bg: "bg-card-amber", enabled: true },
   { type: "slide_deck", label: "슬라이드 자료", icon: Presentation, bg: "bg-card-amber", enabled: true },
   { type: "data_table", label: "데이터 표", icon: Table, bg: "bg-blue-50", enabled: false, fullWidth: true },
@@ -48,8 +53,10 @@ const OUTPUT_ICONS: Record<string, React.ReactNode> = {
   infographic: <BarChart3 className="w-4 h-4 text-amber-600" />,
   slide_deck: <Presentation className="w-4 h-4 text-amber-600" />,
   audio_overview: <Headphones className="w-4 h-4 text-blue-600" />,
-  mind_map: <Brain className="w-4 h-4 text-purple-600" />,
-  report: <FileText className="w-4 h-4 text-purple-600" />,
+  mind_map: <Brain className="w-4 h-4 text-rose-600" />,
+  report: <FileText className="w-4 h-4 text-rose-600" />,
+  flashcard: <CreditCard className="w-4 h-4 text-emerald-600" />,
+  quiz: <HelpCircle className="w-4 h-4 text-emerald-600" />,
 };
 
 interface StudioPanelProps {
@@ -59,13 +66,24 @@ interface StudioPanelProps {
 export function StudioPanel({ notebookId }: StudioPanelProps) {
   const [showInfographicModal, setShowInfographicModal] = useState(false);
   const [showSlideModal, setShowSlideModal] = useState(false);
+  const [showMindMapModal, setShowMindMapModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showFlashcardModal, setShowFlashcardModal] = useState(false);
+  const [showQuizModal, setShowQuizModal] = useState(false);
   const [viewingOutputId, setViewingOutputId] = useState<string | null>(null);
   const [deletingOutputId, setDeletingOutputId] = useState<string | null>(null);
+  const [noteInput, setNoteInput] = useState("");
+  const [showNoteInput, setShowNoteInput] = useState(false);
 
   const { data: outputs = [] } = useStudioOutputs(notebookId);
   const viewingOutput = outputs.find((o) => o.id === viewingOutputId) || null;
   const deleteOutput = useDeleteStudioOutput();
   const retryOutput = useRetryStudioOutput();
+
+  const { data: notes = [] } = useNotes(notebookId);
+  const addNote = useAddNote();
+  const deleteNote = useDeleteNote();
+  const togglePin = useTogglePin();
 
   const handleTileClick = (type: string, enabled: boolean) => {
     if (!enabled) {
@@ -74,6 +92,10 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
     }
     if (type === "infographic") setShowInfographicModal(true);
     if (type === "slide_deck") setShowSlideModal(true);
+    if (type === "mind_map") setShowMindMapModal(true);
+    if (type === "report") setShowReportModal(true);
+    if (type === "flashcard") setShowFlashcardModal(true);
+    if (type === "quiz") setShowQuizModal(true);
   };
 
   const handleDeleteOutput = async (id: string) => {
@@ -254,16 +276,93 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
               </div>
             </>
           )}
+
+          {/* Notes Section */}
+          {notes.length > 0 && (
+            <>
+              <div className="my-4 border-t border-border-default" />
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wide">메모</h4>
+                <span className="text-[11px] text-text-muted">{notes.length}개</span>
+              </div>
+              <div className="space-y-1">
+                {notes.map((note) => (
+                  <div
+                    key={note.id}
+                    className="group flex items-start gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50"
+                  >
+                    {note.pinned && <Pin className="w-3 h-3 text-brand shrink-0 mt-0.5" />}
+                    <p className="flex-1 text-[12px] text-text-secondary line-clamp-2 min-w-0">
+                      {note.content}
+                    </p>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 shrink-0">
+                      <button
+                        onClick={() => togglePin.mutate({ id: note.id, pinned: !note.pinned })}
+                        className="p-1 rounded hover:bg-gray-200 cursor-pointer"
+                        title={note.pinned ? "고정 해제" : "고정"}
+                      >
+                        <Pin className={`w-3 h-3 ${note.pinned ? "text-brand" : "text-text-muted"}`} />
+                      </button>
+                      <button
+                        onClick={() => deleteNote.mutate(note.id)}
+                        className="p-1 rounded hover:bg-gray-200 cursor-pointer"
+                      >
+                        <X className="w-3 h-3 text-text-muted" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </ScrollArea>
+
+      {/* Note Input */}
+      {showNoteInput && (
+        <div className="px-3 pb-3 border-t border-border-default pt-2">
+          <textarea
+            value={noteInput}
+            onChange={(e) => setNoteInput(e.target.value)}
+            placeholder="메모를 입력하세요..."
+            className="w-full h-16 text-[13px] rounded-md border border-border-default px-2.5 py-2 resize-none focus:border-brand focus:ring-1 focus:ring-brand/20 outline-none"
+            autoFocus
+          />
+          <div className="flex justify-end gap-1.5 mt-1.5">
+            <button
+              onClick={() => { setShowNoteInput(false); setNoteInput(""); }}
+              className="px-2.5 py-1 text-[12px] text-text-muted rounded hover:bg-gray-100 cursor-pointer"
+            >
+              취소
+            </button>
+            <button
+              onClick={async () => {
+                if (!noteInput.trim()) return;
+                try {
+                  await addNote.mutateAsync({ notebookId, content: noteInput.trim() });
+                  setNoteInput("");
+                  setShowNoteInput(false);
+                  toast.success("메모가 추가되었습니다.");
+                } catch {
+                  toast.error("메모 추가에 실패했습니다.");
+                }
+              }}
+              disabled={!noteInput.trim() || addNote.isPending}
+              className="px-2.5 py-1 text-[12px] text-white bg-brand rounded hover:bg-brand-hover disabled:opacity-50 cursor-pointer"
+            >
+              {addNote.isPending ? "저장 중..." : "추가"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Bottom Action */}
       <div className="p-3 border-t border-border-default">
         <button
-          onClick={() => toast.info("메모 기능은 준비 중입니다.")}
+          onClick={() => setShowNoteInput(!showNoteInput)}
           className="w-full h-10 flex items-center justify-center gap-2 bg-gray-50 border border-border-default rounded-lg text-[13px] text-text-secondary hover:bg-gray-100 transition-colors cursor-pointer"
         >
-          <StickyNote className="w-4 h-4" />
+          {showNoteInput ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           메모 추가
         </button>
       </div>
@@ -277,6 +376,26 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
       <SlideModal
         open={showSlideModal}
         onClose={() => setShowSlideModal(false)}
+        notebookId={notebookId}
+      />
+      <MindMapModal
+        open={showMindMapModal}
+        onClose={() => setShowMindMapModal(false)}
+        notebookId={notebookId}
+      />
+      <ReportModal
+        open={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        notebookId={notebookId}
+      />
+      <FlashcardModal
+        open={showFlashcardModal}
+        onClose={() => setShowFlashcardModal(false)}
+        notebookId={notebookId}
+      />
+      <QuizModal
+        open={showQuizModal}
+        onClose={() => setShowQuizModal(false)}
         notebookId={notebookId}
       />
 

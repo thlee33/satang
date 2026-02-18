@@ -138,32 +138,16 @@ export function SettingsClient({ user }: SettingsClientProps) {
               : themes?.map((theme) => (
                   <div
                     key={theme.id}
-                    className="group h-[120px] rounded-xl overflow-hidden relative cursor-pointer border border-transparent hover:border-brand transition-all"
+                    className="group h-[120px] rounded-xl overflow-hidden relative cursor-pointer border border-border-default hover:border-brand transition-all bg-gray-50"
                     onClick={() => handleEditTheme(theme)}
                   >
-                    <div
-                      className="absolute inset-0"
-                      style={{ backgroundColor: theme.primary_color }}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-black/20" />
-                      {/* Mini slide layout mockup */}
-                      <div className="absolute top-3 left-3 right-3">
-                        <div className="h-1.5 w-12 bg-white/60 rounded-full mb-1.5" />
-                        <div className="h-1 w-16 bg-white/30 rounded-full mb-1" />
-                        <div className="h-1 w-10 bg-white/20 rounded-full" />
-                      </div>
-                      <div className="absolute bottom-8 left-3 right-3 flex gap-1.5">
-                        <div className="h-3 flex-1 bg-white/15 rounded-sm" />
-                        <div className="h-3 flex-1 bg-white/15 rounded-sm" />
-                        <div className="h-3 flex-1 bg-white/15 rounded-sm" />
-                      </div>
-                    </div>
-
-                    {/* Name label */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-3 py-1.5">
-                      <span className="text-xs text-white font-medium truncate block">
+                    <div className="p-3 h-full flex flex-col">
+                      <span className="text-sm font-medium text-text-primary truncate">
                         {theme.name}
                       </span>
+                      <p className="text-[11px] text-text-tertiary mt-1 line-clamp-3 leading-relaxed">
+                        {theme.prompt}
+                      </p>
                     </div>
 
                     {/* Hover actions */}
@@ -173,7 +157,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
                           e.stopPropagation();
                           handleEditTheme(theme);
                         }}
-                        className="w-6 h-6 rounded-md bg-white/90 hover:bg-white flex items-center justify-center"
+                        className="w-6 h-6 rounded-md bg-white hover:bg-gray-100 border border-border-default flex items-center justify-center"
                       >
                         <Pencil className="w-3 h-3 text-gray-700" />
                       </button>
@@ -182,7 +166,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
                           e.stopPropagation();
                           handleDeleteTheme(theme);
                         }}
-                        className="w-6 h-6 rounded-md bg-white/90 hover:bg-white flex items-center justify-center"
+                        className="w-6 h-6 rounded-md bg-white hover:bg-gray-100 border border-border-default flex items-center justify-center"
                       >
                         <Trash2 className="w-3 h-3 text-red-500" />
                       </button>

@@ -32,12 +32,7 @@ export function useCreateDesignTheme() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (params: {
-      name: string;
-      primary_color: string;
-      mood: string;
-      style: string;
-    }) => {
+    mutationFn: async (params: { name: string; prompt: string }) => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -66,9 +61,7 @@ export function useUpdateDesignTheme() {
     mutationFn: async (params: {
       id: string;
       name?: string;
-      primary_color?: string;
-      mood?: string;
-      style?: string;
+      prompt?: string;
     }) => {
       const { id, ...updates } = params;
       const { data, error } = await supabase

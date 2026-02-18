@@ -14,9 +14,9 @@ export async function generateInfographicImage(params: {
   orientation: string;
   detailLevel: string;
   userPrompt: string;
-  designTheme?: { primaryColor: string; mood: string; style: string };
+  userThemePrompt?: string;
 }): Promise<{ imageData: string; mimeType: string }> {
-  const { sourceContent, language, orientation, detailLevel, userPrompt, designTheme } =
+  const { sourceContent, language, orientation, detailLevel, userPrompt, userThemePrompt } =
     params;
 
   const languageNames: Record<string, string> = {
@@ -35,13 +35,10 @@ export async function generateInfographicImage(params: {
     detailed: "comprehensive with in-depth data points",
   };
 
-  const themeBlock = designTheme
+  const themeBlock = userThemePrompt
     ? `
 Design Theme (apply consistently):
-- Primary color: ${designTheme.primaryColor}
-- Mood: ${designTheme.mood}
-- Style: ${designTheme.style}
-- Use this color as the dominant accent throughout the infographic
+${userThemePrompt}
 `
     : "";
 
@@ -57,7 +54,7 @@ Requirements:
 - Use clean, modern design with clear visual hierarchy
 - Include relevant icons, charts, and data visualizations
 - Ensure all text is legible and properly rendered
-${designTheme ? "- Follow the specified design theme consistently" : "- Professional color scheme with good contrast"}
+${userThemePrompt ? "- Follow the specified design theme consistently" : "- Professional color scheme with good contrast"}
 
 ${userPrompt ? `Additional style instructions: ${userPrompt}` : ""}`;
 
@@ -170,6 +167,7 @@ export async function generateSlideImage(params: {
   slideType?: SlideType;
   subtitle?: string;
   designTheme?: DesignTheme;
+  userThemePrompt?: string;
   language: string;
   format: string;
   userPrompt: string;
@@ -183,6 +181,7 @@ export async function generateSlideImage(params: {
     slideType = "content",
     subtitle,
     designTheme,
+    userThemePrompt,
     language,
     format,
     userPrompt,
@@ -211,7 +210,11 @@ export async function generateSlideImage(params: {
     format,
   });
 
-  const themeInstructions = designTheme
+  const themeInstructions = userThemePrompt
+    ? `Design Theme (apply consistently):
+${userThemePrompt}
+`
+    : designTheme
     ? `Design Theme (apply consistently):
 - Primary color: ${designTheme.primaryColor}
 - Mood: ${designTheme.mood}

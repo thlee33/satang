@@ -107,20 +107,16 @@ export async function POST(request: Request) {
           })
           .eq("id", outputId);
 
-        // Fetch user design theme if specified
-        let userDesignTheme: DesignTheme | undefined;
+        // Fetch user design theme prompt if specified
+        let userThemePrompt: string | undefined;
         if (designThemeId) {
           const { data: themeRow } = await adminClient
             .from("design_themes")
-            .select("primary_color, mood, style")
+            .select("prompt")
             .eq("id", designThemeId)
             .single();
           if (themeRow) {
-            userDesignTheme = {
-              primaryColor: themeRow.primary_color,
-              mood: themeRow.mood,
-              style: themeRow.style,
-            };
+            userThemePrompt = themeRow.prompt;
           }
         }
 
@@ -167,11 +163,8 @@ ${prompt ? `추가 지시사항: ${prompt}` : ""}
 
 ## 디자인 테마
 
-${userDesignTheme
-  ? `다음 사용자 지정 테마를 그대로 사용하세요:
-- primaryColor: "${userDesignTheme.primaryColor}"
-- mood: "${userDesignTheme.mood}"
-- style: "${userDesignTheme.style}"`
+${userThemePrompt
+  ? `다음 사용자 지정 디자인 지시사항을 반드시 따르세요:\n${userThemePrompt}`
   : "소스 내용의 주제와 분위기에 맞는 디자인 테마를 하나 선정하세요."}
 
 ## JSON 형식 (코드블록 없이 순수 JSON만 응답)
@@ -223,10 +216,6 @@ ${userDesignTheme
             { type: "cover", title: "개요", content: "프레젠테이션 개요 슬라이드입니다." },
           ];
         }
-        // Override with user theme if provided
-        if (userDesignTheme) {
-          designTheme = userDesignTheme;
-        }
         console.log(`[Slides ${outputId}] 아웃라인 완료 - ${slides.length}장, 테마: ${designTheme?.mood || "기본"}`);
 
         // Determine topic
@@ -262,6 +251,7 @@ ${userDesignTheme
             slideType: (slide.type || "content") as SlideType,
             subtitle: slide.subtitle,
             designTheme,
+            userThemePrompt,
             language,
             format,
             userPrompt: prompt,

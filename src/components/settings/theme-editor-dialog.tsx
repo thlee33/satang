@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import {
   useCreateDesignTheme,
@@ -15,23 +16,6 @@ import {
 } from "@/hooks/use-design-themes";
 import type { DesignThemeRow } from "@/lib/supabase/types";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-
-const MOOD_PRESETS = [
-  { label: "전문적", value: "professional and modern" },
-  { label: "따뜻한", value: "warm and friendly" },
-  { label: "대담한", value: "bold and impactful" },
-  { label: "우아한", value: "elegant and sophisticated" },
-  { label: "재미있는", value: "fun and playful" },
-];
-
-const STYLE_PRESETS = [
-  { label: "미니멀", value: "minimal with bold typography" },
-  { label: "기업스타일", value: "corporate with structured layout" },
-  { label: "화려한", value: "vibrant with rich visuals" },
-  { label: "다크테마", value: "dark theme with neon accents" },
-  { label: "파스텔", value: "pastel and soft gradients" },
-];
 
 interface ThemeEditorDialogProps {
   open: boolean;
@@ -45,9 +29,7 @@ export function ThemeEditorDialog({
   theme,
 }: ThemeEditorDialogProps) {
   const [name, setName] = useState("");
-  const [primaryColor, setPrimaryColor] = useState("#4F46E5");
-  const [mood, setMood] = useState("professional and modern");
-  const [style, setStyle] = useState("minimal with bold typography");
+  const [prompt, setPrompt] = useState("");
 
   const createTheme = useCreateDesignTheme();
   const updateTheme = useUpdateDesignTheme();
@@ -58,14 +40,10 @@ export function ThemeEditorDialog({
   useEffect(() => {
     if (theme) {
       setName(theme.name);
-      setPrimaryColor(theme.primary_color);
-      setMood(theme.mood);
-      setStyle(theme.style);
+      setPrompt(theme.prompt);
     } else {
       setName("");
-      setPrimaryColor("#4F46E5");
-      setMood("professional and modern");
-      setStyle("minimal with bold typography");
+      setPrompt("");
     }
   }, [theme, open]);
 
@@ -74,23 +52,23 @@ export function ThemeEditorDialog({
       toast.error("테마 이름을 입력해주세요.");
       return;
     }
+    if (!prompt.trim()) {
+      toast.error("디자인 프롬프트를 입력해주세요.");
+      return;
+    }
 
     try {
       if (isEditing) {
         await updateTheme.mutateAsync({
           id: theme.id,
           name: name.trim(),
-          primary_color: primaryColor,
-          mood,
-          style,
+          prompt: prompt.trim(),
         });
         toast.success("테마가 수정되었습니다.");
       } else {
         await createTheme.mutateAsync({
           name: name.trim(),
-          primary_color: primaryColor,
-          mood,
-          style,
+          prompt: prompt.trim(),
         });
         toast.success("테마가 생성되었습니다.");
       }
@@ -110,23 +88,6 @@ export function ThemeEditorDialog({
         </DialogHeader>
 
         <div className="space-y-5">
-          {/* Preview Card */}
-          <div
-            className="rounded-xl p-6 text-white relative overflow-hidden"
-            style={{ backgroundColor: primaryColor }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-black/20" />
-            <div className="relative">
-              <div className="text-xs font-medium opacity-80 mb-1">미리보기</div>
-              <div className="text-lg font-bold mb-1">
-                {name || "테마 이름"}
-              </div>
-              <div className="text-xs opacity-70 leading-relaxed">
-                {mood} · {style}
-              </div>
-            </div>
-          </div>
-
           {/* Theme Name */}
           <div>
             <label className="text-[13px] font-medium text-text-secondary block mb-2">
@@ -141,84 +102,16 @@ export function ThemeEditorDialog({
             />
           </div>
 
-          {/* Primary Color */}
+          {/* Design Prompt */}
           <div>
             <label className="text-[13px] font-medium text-text-secondary block mb-2">
-              주요 색상
+              디자인 프롬프트
             </label>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={primaryColor}
-                onChange={(e) => setPrimaryColor(e.target.value)}
-                className="w-10 h-10 rounded-lg border border-border-default cursor-pointer p-0.5"
-              />
-              <input
-                type="text"
-                value={primaryColor}
-                onChange={(e) => setPrimaryColor(e.target.value)}
-                className="w-28 h-9 rounded-lg border border-border-default px-3 text-sm font-mono focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Mood */}
-          <div>
-            <label className="text-[13px] font-medium text-text-secondary block mb-2">
-              분위기
-            </label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {MOOD_PRESETS.map((preset) => (
-                <button
-                  key={preset.value}
-                  onClick={() => setMood(preset.value)}
-                  className={cn(
-                    "px-3 h-7 rounded-full text-xs font-medium transition-colors cursor-pointer",
-                    mood === preset.value
-                      ? "bg-brand text-white"
-                      : "bg-gray-100 text-text-secondary hover:bg-gray-200"
-                  )}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-            <input
-              type="text"
-              value={mood}
-              onChange={(e) => setMood(e.target.value)}
-              placeholder="분위기를 직접 입력..."
-              className="w-full h-9 rounded-lg border border-border-default px-3 text-sm focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none"
-            />
-          </div>
-
-          {/* Style */}
-          <div>
-            <label className="text-[13px] font-medium text-text-secondary block mb-2">
-              스타일
-            </label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {STYLE_PRESETS.map((preset) => (
-                <button
-                  key={preset.value}
-                  onClick={() => setStyle(preset.value)}
-                  className={cn(
-                    "px-3 h-7 rounded-full text-xs font-medium transition-colors cursor-pointer",
-                    style === preset.value
-                      ? "bg-brand text-white"
-                      : "bg-gray-100 text-text-secondary hover:bg-gray-200"
-                  )}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-            <input
-              type="text"
-              value={style}
-              onChange={(e) => setStyle(e.target.value)}
-              placeholder="스타일을 직접 입력..."
-              className="w-full h-9 rounded-lg border border-border-default px-3 text-sm focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none"
+            <Textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder={`색상, 분위기, 스타일 등 원하는 디자인을 자유롭게 설명하세요.\n\n예시:\n파란색(#4F46E5) 계열의 전문적이고 모던한 느낌\n미니멀한 레이아웃에 굵은 타이포그래피\n깔끔한 아이콘과 충분한 여백 사용`}
+              className="min-h-[140px] max-h-[40vh] resize-y"
             />
           </div>
 

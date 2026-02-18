@@ -70,20 +70,16 @@ export async function POST(request: Request) {
       try {
         console.log(`[Infographic ${outputId}] 생성 시작 - 소스 ${sources.length}개`);
 
-        // Fetch user design theme if specified
-        let designTheme: { primaryColor: string; mood: string; style: string } | undefined;
+        // Fetch user design theme prompt if specified
+        let userThemePrompt: string | undefined;
         if (designThemeId) {
           const { data: themeRow } = await adminClient
             .from("design_themes")
-            .select("primary_color, mood, style")
+            .select("prompt")
             .eq("id", designThemeId)
             .single();
           if (themeRow) {
-            designTheme = {
-              primaryColor: themeRow.primary_color,
-              mood: themeRow.mood,
-              style: themeRow.style,
-            };
+            userThemePrompt = themeRow.prompt;
           }
         }
 
@@ -106,7 +102,7 @@ export async function POST(request: Request) {
           orientation,
           detailLevel,
           userPrompt: prompt,
-          designTheme,
+          userThemePrompt,
         });
         console.log(`[Infographic ${outputId}] 이미지 생성 완료 (${mimeType})`);
 

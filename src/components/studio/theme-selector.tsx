@@ -2,7 +2,7 @@
 
 import { useDesignThemes } from "@/hooks/use-design-themes";
 import { cn } from "@/lib/utils";
-import { Sparkles, Settings } from "lucide-react";
+import { Sparkles, Palette, Settings } from "lucide-react";
 import Link from "next/link";
 
 interface ThemeSelectorProps {
@@ -57,29 +57,22 @@ export function ThemeSelector({
               key={theme.id}
               onClick={() => onSelect(theme.id)}
               className={cn(
-                "flex-shrink-0 w-[100px] h-[68px] rounded-lg border-2 transition-all cursor-pointer overflow-hidden relative",
+                "flex-shrink-0 w-[100px] h-[68px] rounded-lg border-2 transition-all cursor-pointer overflow-hidden relative bg-gray-50",
                 selectedThemeId === theme.id
                   ? "border-brand"
                   : "border-border-default hover:border-gray-300"
               )}
             >
-              <div
-                className="absolute inset-0"
-                style={{ backgroundColor: theme.primary_color }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-white/15 to-black/25" />
-                {/* Mini slide layout mockup */}
-                <div className="absolute top-2 left-2 right-2">
-                  <div className="h-1 w-8 bg-white/60 rounded-full mb-1" />
-                  <div className="h-0.5 w-12 bg-white/30 rounded-full" />
-                </div>
-                <div className="absolute bottom-1.5 left-2 right-2 flex gap-1">
-                  <div className="h-2 flex-1 bg-white/20 rounded-sm" />
-                  <div className="h-2 flex-1 bg-white/20 rounded-sm" />
-                </div>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-1.5 py-0.5">
-                <span className="text-[10px] text-white font-medium truncate block">
+              <div className="flex flex-col items-center justify-center h-full px-2 gap-1">
+                <Palette
+                  className={cn(
+                    "w-4 h-4",
+                    selectedThemeId === theme.id
+                      ? "text-brand"
+                      : "text-text-tertiary"
+                  )}
+                />
+                <span className="text-[10px] font-medium text-text-primary truncate w-full text-center">
                   {theme.name}
                 </span>
               </div>

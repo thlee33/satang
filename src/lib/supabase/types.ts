@@ -200,10 +200,7 @@ export interface Database {
           id: string;
           user_id: string;
           name: string;
-          primary_color: string;
-          mood: string;
-          style: string;
-          thumbnail_url: string | null;
+          prompt: string;
           sort_order: number;
           created_at: string;
           updated_at: string;
@@ -212,18 +209,12 @@ export interface Database {
           id?: string;
           user_id: string;
           name: string;
-          primary_color?: string;
-          mood?: string;
-          style?: string;
-          thumbnail_url?: string | null;
+          prompt: string;
           sort_order?: number;
         };
         Update: {
           name?: string;
-          primary_color?: string;
-          mood?: string;
-          style?: string;
-          thumbnail_url?: string | null;
+          prompt?: string;
           sort_order?: number;
           updated_at?: string;
         };

@@ -17,11 +17,11 @@ export function ThemeSelector({
   const { data: themes, isLoading } = useDesignThemes();
 
   return (
-    <div className="min-w-0">
+    <div className="overflow-hidden">
       <label className="text-[13px] font-medium text-text-secondary block mb-2">
         디자인 테마
       </label>
-      <div className="flex flex-nowrap gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+      <div className="flex flex-nowrap gap-2 overflow-x-auto pb-2">
         {/* Auto option */}
         <button
           onClick={() => onSelect(null)}

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  Download, ChevronLeft, ChevronRight, RotateCcw, Check, X, FileDown, Loader2,
+  Download, ChevronLeft, ChevronRight, RotateCcw, Check, X, FileDown, FileText, Loader2,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -371,6 +371,32 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
   };
 
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [pptxLoading, setPptxLoading] = useState(false);
+
+  const handleExportPptx = async () => {
+    setPptxLoading(true);
+    try {
+      const response = await fetch("/api/studio/slides/pptx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrls: images, title: output.title }),
+      });
+
+      if (!response.ok) throw new Error("PPTX generation failed");
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${output.title || "slides"}.pptx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("PPTX 다운로드에 실패했습니다.");
+    } finally {
+      setPptxLoading(false);
+    }
+  };
 
   const handleExportPdf = async () => {
     setPdfLoading(true);
@@ -431,14 +457,24 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
                   이미지 저장
                 </Button>
                 {output.generation_status === "completed" && (
-                  <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={pdfLoading}>
-                    {pdfLoading ? (
-                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                    ) : (
-                      <FileDown className="w-4 h-4 mr-1" />
-                    )}
-                    {pdfLoading ? "생성 중..." : "PDF 다운로드"}
-                  </Button>
+                  <>
+                    <Button variant="outline" size="sm" onClick={handleExportPptx} disabled={pptxLoading}>
+                      {pptxLoading ? (
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      ) : (
+                        <FileText className="w-4 h-4 mr-1" />
+                      )}
+                      {pptxLoading ? "생성 중..." : "PPTX"}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={pdfLoading}>
+                      {pdfLoading ? (
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      ) : (
+                        <FileDown className="w-4 h-4 mr-1" />
+                      )}
+                      {pdfLoading ? "생성 중..." : "PDF"}
+                    </Button>
+                  </>
                 )}
               </>
             )}

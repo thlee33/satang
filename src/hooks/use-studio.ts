@@ -71,6 +71,7 @@ export function useGenerateSlides() {
       language: string;
       depth: string;
       prompt: string;
+      slideCount?: number;
     }) => {
       const response = await fetch("/api/studio/slides", {
         method: "POST",
@@ -201,7 +202,7 @@ export function useRetryStudioOutput() {
       const baseBody = { notebookId: output.notebook_id, language: settings.language || "ko", prompt: settings.prompt || "" };
       const bodyMap: Record<string, object> = {
         infographic: { ...baseBody, orientation: settings.orientation || "landscape", detailLevel: settings.detailLevel || "standard" },
-        slide_deck: { ...baseBody, format: settings.format || "detailed", depth: settings.depth || "default" },
+        slide_deck: { ...baseBody, format: settings.format || "detailed", depth: settings.depth || "default", slideCount: settings.slideCount ? Number(settings.slideCount) : undefined },
         mind_map: baseBody,
         report: { ...baseBody, detailLevel: settings.detailLevel || "standard" },
         flashcard: { ...baseBody, cardCount: Number(settings.cardCount) || 10 },

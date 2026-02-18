@@ -54,6 +54,7 @@ export function SlideModal({ open, onClose, notebookId }: SlideModalProps) {
   const [format, setFormat] = useState("detailed");
   const [language, setLanguage] = useState("ko");
   const [depth, setDepth] = useState("default");
+  const [slideCount, setSlideCount] = useState("");
   const [prompt, setPrompt] = useState("");
 
   const generate = useGenerateSlides();
@@ -66,6 +67,7 @@ export function SlideModal({ open, onClose, notebookId }: SlideModalProps) {
         language,
         depth,
         prompt,
+        slideCount: slideCount ? parseInt(slideCount, 10) : undefined,
       });
       toast.success("슬라이드 생성이 시작되었습니다.");
       onClose();
@@ -160,6 +162,27 @@ export function SlideModal({ open, onClose, notebookId }: SlideModalProps) {
                   {d.label}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Slide Count */}
+          <div>
+            <label className="text-[13px] font-medium text-text-secondary block mb-2">
+              슬라이드 수
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={slideCount}
+                onChange={(e) => setSlideCount(e.target.value)}
+                placeholder="자동"
+                className="w-24 h-9 rounded-lg border border-border-default px-3 text-sm focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none"
+              />
+              <span className="text-xs text-text-tertiary">
+                비워두면 형식과 깊이에 따라 자동 결정
+              </span>
             </div>
           </div>
 

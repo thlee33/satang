@@ -32,7 +32,11 @@ export function useCreateDesignTheme() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (params: { name: string; prompt: string }) => {
+    mutationFn: async (params: {
+      name: string;
+      prompt: string;
+      thumbnail_url?: string | null;
+    }) => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -62,6 +66,7 @@ export function useUpdateDesignTheme() {
       id: string;
       name?: string;
       prompt?: string;
+      thumbnail_url?: string | null;
     }) => {
       const { id, ...updates } = params;
       const { data, error } = await supabase
@@ -94,6 +99,26 @@ export function useDeleteDesignTheme() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["design-themes"] });
+    },
+  });
+}
+
+export function useGenerateThemePreview() {
+  return useMutation({
+    mutationFn: async (prompt: string) => {
+      const response = await fetch("/api/studio/theme-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "미리보기 생성 실패");
+      }
+
+      const data = await response.json();
+      return data.thumbnailUrl as string;
     },
   });
 }

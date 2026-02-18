@@ -57,25 +57,40 @@ export function ThemeSelector({
               key={theme.id}
               onClick={() => onSelect(theme.id)}
               className={cn(
-                "flex-shrink-0 w-[100px] h-[68px] rounded-lg border-2 transition-all cursor-pointer overflow-hidden relative bg-gray-50",
+                "flex-shrink-0 w-[100px] h-[68px] rounded-lg border-2 transition-all cursor-pointer overflow-hidden relative",
                 selectedThemeId === theme.id
                   ? "border-brand"
                   : "border-border-default hover:border-gray-300"
               )}
             >
-              <div className="flex flex-col items-center justify-center h-full px-2 gap-1">
-                <Palette
-                  className={cn(
-                    "w-4 h-4",
-                    selectedThemeId === theme.id
-                      ? "text-brand"
-                      : "text-text-tertiary"
-                  )}
-                />
-                <span className="text-[10px] font-medium text-text-primary truncate w-full text-center">
-                  {theme.name}
-                </span>
-              </div>
+              {theme.thumbnail_url ? (
+                <>
+                  <img
+                    src={theme.thumbnail_url}
+                    alt={theme.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-1.5 py-0.5">
+                    <span className="text-[10px] text-white font-medium truncate block">
+                      {theme.name}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full px-2 gap-1 bg-gray-50">
+                  <Palette
+                    className={cn(
+                      "w-4 h-4",
+                      selectedThemeId === theme.id
+                        ? "text-brand"
+                        : "text-text-tertiary"
+                    )}
+                  />
+                  <span className="text-[10px] font-medium text-text-primary truncate w-full text-center">
+                    {theme.name}
+                  </span>
+                </div>
+              )}
             </button>
           ))
         )}

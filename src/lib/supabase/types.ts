@@ -201,6 +201,7 @@ export interface Database {
           user_id: string;
           name: string;
           prompt: string;
+          thumbnail_url: string | null;
           sort_order: number;
           created_at: string;
           updated_at: string;
@@ -210,11 +211,13 @@ export interface Database {
           user_id: string;
           name: string;
           prompt: string;
+          thumbnail_url?: string | null;
           sort_order?: number;
         };
         Update: {
           name?: string;
           prompt?: string;
+          thumbnail_url?: string | null;
           sort_order?: number;
           updated_at?: string;
         };

@@ -138,17 +138,34 @@ export function SettingsClient({ user }: SettingsClientProps) {
               : themes?.map((theme) => (
                   <div
                     key={theme.id}
-                    className="group h-[120px] rounded-xl overflow-hidden relative cursor-pointer border border-border-default hover:border-brand transition-all bg-gray-50"
+                    className="group h-[120px] rounded-xl overflow-hidden relative cursor-pointer border border-border-default hover:border-brand transition-all"
                     onClick={() => handleEditTheme(theme)}
                   >
-                    <div className="p-3 h-full flex flex-col">
-                      <span className="text-sm font-medium text-text-primary truncate">
-                        {theme.name}
-                      </span>
-                      <p className="text-[11px] text-text-tertiary mt-1 line-clamp-3 leading-relaxed">
-                        {theme.prompt}
-                      </p>
-                    </div>
+                    {theme.thumbnail_url ? (
+                      <img
+                        src={theme.thumbnail_url}
+                        alt={theme.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="p-3 h-full flex flex-col bg-gray-50">
+                        <span className="text-sm font-medium text-text-primary truncate">
+                          {theme.name}
+                        </span>
+                        <p className="text-[11px] text-text-tertiary mt-1 line-clamp-3 leading-relaxed">
+                          {theme.prompt}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Name overlay (when thumbnail exists) */}
+                    {theme.thumbnail_url && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-3 py-1.5">
+                        <span className="text-xs text-white font-medium truncate block">
+                          {theme.name}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Hover actions */}
                     <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -157,7 +174,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
                           e.stopPropagation();
                           handleEditTheme(theme);
                         }}
-                        className="w-6 h-6 rounded-md bg-white hover:bg-gray-100 border border-border-default flex items-center justify-center"
+                        className="w-6 h-6 rounded-md bg-white/90 hover:bg-white shadow-sm flex items-center justify-center"
                       >
                         <Pencil className="w-3 h-3 text-gray-700" />
                       </button>
@@ -166,7 +183,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
                           e.stopPropagation();
                           handleDeleteTheme(theme);
                         }}
-                        className="w-6 h-6 rounded-md bg-white hover:bg-gray-100 border border-border-default flex items-center justify-center"
+                        className="w-6 h-6 rounded-md bg-white/90 hover:bg-white shadow-sm flex items-center justify-center"
                       >
                         <Trash2 className="w-3 h-3 text-red-500" />
                       </button>

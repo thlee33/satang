@@ -3,6 +3,7 @@ create table public.design_themes (
   user_id uuid references auth.users(id) on delete cascade not null,
   name text not null,
   prompt text not null,
+  thumbnail_url text,
   sort_order integer default 0,
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null

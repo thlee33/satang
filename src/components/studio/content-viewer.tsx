@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  Download, ChevronLeft, ChevronRight, RotateCcw, Check, X, FileDown, FileText, Loader2,
+  Download, ChevronLeft, ChevronRight, RotateCcw, RefreshCw, Check, X, FileDown, FileText, Loader2, Send,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import type { StudioOutput } from "@/lib/supabase/types";
 
 const TEXT_BASED_TYPES = ["mind_map", "report", "flashcard", "quiz"];
@@ -372,6 +373,40 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
 
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pptxLoading, setPptxLoading] = useState(false);
+  const [regenOpen, setRegenOpen] = useState(false);
+  const [regenPrompt, setRegenPrompt] = useState("");
+  const [regenLoading, setRegenLoading] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleRegenerate = async () => {
+    if (!regenPrompt.trim()) return;
+    setRegenLoading(true);
+    try {
+      const response = await fetch("/api/studio/slides/regenerate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          outputId: output.id,
+          slideIndex: currentSlide,
+          prompt: regenPrompt.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "재생성 실패");
+      }
+
+      toast.success(`슬라이드 ${currentSlide + 1}이(가) 재생성되었습니다.`);
+      setRegenOpen(false);
+      setRegenPrompt("");
+      queryClient.invalidateQueries({ queryKey: ["studio-outputs", output.notebook_id] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "슬라이드 재생성에 실패했습니다.");
+    } finally {
+      setRegenLoading(false);
+    }
+  };
 
   const handleExportPptx = async () => {
     setPptxLoading(true);
@@ -588,40 +623,93 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
               <p className="text-xs text-text-muted">{output.error_message}</p>
             </div>
           ) : images.length > 0 ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={images[isSlides ? currentSlide : 0]}
-                alt={output.title}
-                className="max-w-full max-h-[75vh] object-contain rounded-lg"
-              />
+            <div className="flex flex-col items-center w-full">
+              <div className="relative flex items-center justify-center w-full">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={images[isSlides ? currentSlide : 0]}
+                  alt={output.title}
+                  className={`max-w-full object-contain rounded-lg ${regenOpen ? "max-h-[55vh]" : "max-h-[75vh]"}`}
+                />
 
-              {/* Slide Navigation */}
-              {isSlides && (
-                <>
-                  <button
-                    onClick={() =>
-                      setCurrentSlide((prev) => Math.max(0, prev - 1))
-                    }
-                    disabled={currentSlide === 0}
-                    className="absolute left-2 p-2 bg-white/80 rounded-full shadow hover:bg-white disabled:opacity-30 cursor-pointer"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() =>
-                      setCurrentSlide((prev) =>
-                        Math.min(images.length - 1, prev + 1)
-                      )
-                    }
-                    disabled={currentSlide === images.length - 1}
-                    className="absolute right-2 p-2 bg-white/80 rounded-full shadow hover:bg-white disabled:opacity-30 cursor-pointer"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </>
+                {/* Slide Navigation */}
+                {isSlides && (
+                  <>
+                    <button
+                      onClick={() =>
+                        setCurrentSlide((prev) => Math.max(0, prev - 1))
+                      }
+                      disabled={currentSlide === 0}
+                      className="absolute left-2 p-2 bg-white/80 rounded-full shadow hover:bg-white disabled:opacity-30 cursor-pointer"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() =>
+                        setCurrentSlide((prev) =>
+                          Math.min(images.length - 1, prev + 1)
+                        )
+                      }
+                      disabled={currentSlide === images.length - 1}
+                      className="absolute right-2 p-2 bg-white/80 rounded-full shadow hover:bg-white disabled:opacity-30 cursor-pointer"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Slide Regenerate */}
+              {isSlides && output.generation_status === "completed" && (
+                <div className="w-full max-w-2xl mt-3">
+                  {!regenOpen ? (
+                    <button
+                      onClick={() => setRegenOpen(true)}
+                      className="flex items-center gap-1.5 mx-auto text-xs text-text-muted hover:text-text-secondary transition-colors cursor-pointer"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      이 슬라이드 재생성
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2 px-1">
+                      <div className="flex-1 flex items-center gap-2 bg-white border border-border-default rounded-lg px-3 py-2 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
+                        <span className="text-xs text-text-muted whitespace-nowrap shrink-0">
+                          {currentSlide + 1}장
+                        </span>
+                        <input
+                          type="text"
+                          value={regenPrompt}
+                          onChange={(e) => setRegenPrompt(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) handleRegenerate(); }}
+                          placeholder="변경하고 싶은 내용을 입력하세요 (예: 배경을 파란색으로, 글자를 더 크게)"
+                          className="flex-1 text-sm outline-none bg-transparent"
+                          autoFocus
+                          disabled={regenLoading}
+                        />
+                        <button
+                          onClick={handleRegenerate}
+                          disabled={regenLoading || !regenPrompt.trim()}
+                          className="p-1.5 rounded-md hover:bg-gray-100 disabled:opacity-30 cursor-pointer transition-colors"
+                        >
+                          {regenLoading ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-brand" />
+                          ) : (
+                            <Send className="w-4 h-4 text-brand" />
+                          )}
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => { setRegenOpen(false); setRegenPrompt(""); }}
+                        disabled={regenLoading}
+                        className="p-2 rounded-md hover:bg-gray-100 text-text-muted cursor-pointer transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
-            </>
+            </div>
           ) : (
             <p className="text-sm text-text-muted">
               콘텐츠가 없습니다.

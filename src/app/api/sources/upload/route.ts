@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { NextResponse, after } from "next/server";
+import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase/server";
+import { generateSummary } from "@/lib/ai/gemini";
 import type { SourceType } from "@/lib/supabase/types";
 
 function getSourceType(mimeType: string): SourceType {
@@ -80,19 +81,71 @@ export async function POST(request: Request) {
       );
     }
 
-    // Trigger async processing
-    fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL ? request.url.replace("/api/sources/upload", "/api/sources/process") : "/api/sources/process"}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          cookie: request.headers.get("cookie") || "",
-        },
-        body: JSON.stringify({ sourceId: source.id }),
+    // Process source asynchronously after response
+    const sourceId = source.id;
+    const filePath = fileName;
+    after(async () => {
+      try {
+        const serviceClient = await createServiceRoleClient();
+
+        await serviceClient
+          .from("sources")
+          .update({ processing_status: "processing" })
+          .eq("id", sourceId);
+
+        let extractedText = "";
+
+        if (sourceType === "pdf" && filePath) {
+          const { data: fileData } = await serviceClient.storage
+            .from("sources")
+            .download(filePath);
+          if (fileData) {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const pdfParse = require("pdf-parse") as (buf: Buffer) => Promise<{ text: string }>;
+            const buffer = await fileData.arrayBuffer();
+            const data = await pdfParse(Buffer.from(buffer));
+            extractedText = data.text;
+          }
+        } else if (sourceType === "text" && filePath) {
+          const { data: fileData } = await serviceClient.storage
+            .from("sources")
+            .download(filePath);
+          if (fileData) {
+            extractedText = await fileData.text();
+          }
+        }
+
+        await serviceClient
+          .from("sources")
+          .update({
+            extracted_text: extractedText || null,
+            processing_status: "completed",
+          })
+          .eq("id", sourceId);
+
+        if (extractedText) {
+          try {
+            const summary = await generateSummary(extractedText);
+            await serviceClient
+              .from("sources")
+              .update({ summary })
+              .eq("id", sourceId);
+          } catch {
+            // Summary generation is optional
+          }
+        }
+      } catch (error) {
+        console.error("Processing error:", error);
+        try {
+          const serviceClient = await createServiceRoleClient();
+          await serviceClient
+            .from("sources")
+            .update({ processing_status: "failed" })
+            .eq("id", sourceId);
+        } catch {
+          // Best effort
+        }
       }
-    ).catch(() => {
-      // Fire and forget
     });
 
     return NextResponse.json(source);

@@ -177,14 +177,14 @@ export function SlideModal({ open, onClose, notebookId }: SlideModalProps) {
               <input
                 type="number"
                 min={1}
-                max={20}
+                max={50}
                 value={slideCount}
                 onChange={(e) => setSlideCount(e.target.value)}
                 placeholder="자동"
                 className="w-24 h-9 rounded-lg border border-border-default px-3 text-sm focus:border-brand focus:ring-2 focus:ring-brand/20 outline-none"
               />
               <span className="text-xs text-text-tertiary">
-                비워두면 형식과 깊이에 따라 자동 결정
+                비워두면 자동 결정 (최대 50장)
               </span>
             </div>
           </div>

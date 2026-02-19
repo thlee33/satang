@@ -216,6 +216,12 @@ ${userThemePrompt
             { type: "cover", title: "개요", content: "프레젠테이션 개요 슬라이드입니다." },
           ];
         }
+        // 최대 50장 제한
+        const MAX_SLIDES = 50;
+        if (slides.length > MAX_SLIDES) {
+          console.log(`[Slides ${outputId}] 아웃라인 ${slides.length}장 → ${MAX_SLIDES}장으로 제한`);
+          slides = slides.slice(0, MAX_SLIDES);
+        }
         console.log(`[Slides ${outputId}] 아웃라인 완료 - ${slides.length}장, 테마: ${designTheme?.mood || "기본"}`);
 
         // Determine topic
@@ -233,8 +239,8 @@ ${userThemePrompt
           })
           .eq("id", outputId);
 
-        // Generate images in parallel (concurrency limit: 10)
-        const CONCURRENCY_LIMIT = 10;
+        // Generate images in parallel (concurrency limit: 12)
+        const CONCURRENCY_LIMIT = 12;
         const imageUrls: (string | null)[] = new Array(slides.length).fill(null);
         let completedCount = 0;
         let failedCount = 0;

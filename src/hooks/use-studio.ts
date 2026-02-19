@@ -49,6 +49,13 @@ export function useStudioOutputs(notebookId: string) {
       return data as StudioOutput[];
     },
     enabled: !!notebookId,
+    // Realtime이 비활성화된 경우를 대비한 폴링 fallback
+    refetchInterval: (query) => {
+      const hasGenerating = query.state.data?.some(
+        (o) => o.generation_status === "generating"
+      );
+      return hasGenerating ? 3000 : false;
+    },
   });
 }
 

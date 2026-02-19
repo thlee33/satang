@@ -233,8 +233,8 @@ ${userThemePrompt
           })
           .eq("id", outputId);
 
-        // Generate images in parallel (concurrency limit: 3)
-        const CONCURRENCY_LIMIT = 3;
+        // Generate images in parallel (concurrency limit: 10)
+        const CONCURRENCY_LIMIT = 10;
         const imageUrls: (string | null)[] = new Array(slides.length).fill(null);
         let completedCount = 0;
         let failedCount = 0;

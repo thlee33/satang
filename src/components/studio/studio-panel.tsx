@@ -175,14 +175,20 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
                       <p className="text-[13px] font-medium text-text-primary truncate">
                         {output.title}
                       </p>
-                      <p className="text-[11px] text-text-muted">
-                        {output.source_ids?.length || 0}개 소스
-                        {" · "}
-                        {formatDistanceToNow(new Date(output.created_at), {
-                          addSuffix: true,
-                          locale: ko,
-                        })}
-                      </p>
+                      {output.generation_status === "failed" && output.error_message ? (
+                        <p className="text-[11px] text-error truncate">
+                          {output.error_message}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-text-muted">
+                          {output.source_ids?.length || 0}개 소스
+                          {" · "}
+                          {formatDistanceToNow(new Date(output.created_at), {
+                            addSuffix: true,
+                            locale: ko,
+                          })}
+                        </p>
+                      )}
                     </div>
 
                     {output.generation_status === "generating" && !isStuck(output) ? (

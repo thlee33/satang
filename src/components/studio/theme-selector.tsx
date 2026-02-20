@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useDesignThemes } from "@/hooks/use-design-themes";
 import { cn } from "@/lib/utils";
-import { Sparkles, Palette, Settings } from "lucide-react";
-import Link from "next/link";
+import { Sparkles, Palette, Plus } from "lucide-react";
+import { ThemeEditorDialog } from "@/components/settings/theme-editor-dialog";
 
 interface ThemeSelectorProps {
   selectedThemeId: string | null;
@@ -15,6 +16,7 @@ export function ThemeSelector({
   onSelect,
 }: ThemeSelectorProps) {
   const { data: themes, isLoading } = useDesignThemes();
+  const [showEditor, setShowEditor] = useState(false);
 
   return (
     <div className="overflow-hidden">
@@ -94,18 +96,25 @@ export function ThemeSelector({
             </button>
           ))
         )}
+
+        {/* Add theme button */}
+        {!isLoading && (
+          <button
+            onClick={() => setShowEditor(true)}
+            className="flex-shrink-0 w-[100px] h-[68px] rounded-lg border-2 border-dashed border-border-default hover:border-brand hover:bg-brand-faint transition-all cursor-pointer flex flex-col items-center justify-center gap-1"
+          >
+            <Plus className="w-4 h-4 text-text-tertiary" />
+            <span className="text-[10px] font-medium text-text-tertiary">
+              테마 추가
+            </span>
+          </button>
+        )}
       </div>
 
-      {/* Link to settings if no themes */}
-      {!isLoading && (!themes || themes.length === 0) && (
-        <Link
-          href="/settings"
-          className="inline-flex items-center gap-1 mt-2 text-xs text-brand hover:underline"
-        >
-          <Settings className="w-3 h-3" />
-          설정에서 테마 만들기
-        </Link>
-      )}
+      <ThemeEditorDialog
+        open={showEditor}
+        onClose={() => setShowEditor(false)}
+      />
     </div>
   );
 }

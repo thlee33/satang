@@ -42,12 +42,15 @@ export function SourceAddModal({
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
+      if (acceptedFiles.length === 0) return;
+
       if (sourceCount >= 300) {
         toast.error("소스는 최대 300개까지 추가할 수 있습니다.");
         return;
       }
 
       setIsUploading(true);
+      let successCount = 0;
       try {
         for (const file of acceptedFiles) {
           if (file.size > 10 * 1024 * 1024) {
@@ -67,21 +70,36 @@ export function SourceAddModal({
           if (!response.ok) {
             toast.error(`${file.name}: 업로드 실패`);
           } else {
+            successCount++;
             toast.success(`${file.name}: 업로드 완료`);
             queryClient.invalidateQueries({ queryKey: ["sources"] });
             queryClient.invalidateQueries({ queryKey: ["notebooks"] });
           }
         }
-        onClose();
+        if (successCount > 0) onClose();
+      } catch {
+        toast.error("업로드 중 오류가 발생했습니다.");
       } finally {
         setIsUploading(false);
       }
     },
-    [notebookId, sourceCount, onClose]
+    [notebookId, sourceCount, onClose, queryClient]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
+    onDropRejected: (rejections) => {
+      for (const rejection of rejections) {
+        const isTooLarge = rejection.errors.some((e) => e.code === "file-too-large");
+        if (isTooLarge) {
+          const sizeMB = (rejection.file.size / (1024 * 1024)).toFixed(1);
+          toast.error(`${rejection.file.name}: 파일 크기(${sizeMB}MB)가 10MB를 초과합니다.`);
+        } else {
+          const errors = rejection.errors.map((e) => e.message).join(", ");
+          toast.error(`${rejection.file.name}: ${errors}`);
+        }
+      }
+    },
     accept: {
       "application/pdf": [".pdf"],
       "text/*": [".txt", ".md", ".csv"],
@@ -89,7 +107,6 @@ export function SourceAddModal({
       "audio/*": [".mp3", ".wav", ".m4a", ".ogg"],
     },
     maxSize: 10 * 1024 * 1024,
-    noClick: true,
   });
 
   const handleAddUrl = async () => {
@@ -167,10 +184,10 @@ export function SourceAddModal({
             {/* File Drop Zone */}
             <div
               {...getRootProps()}
-              className={`h-32 border-2 border-dashed rounded-xl flex flex-col items-center justify-center transition-colors ${
+              className={`h-32 border-2 border-dashed rounded-xl flex flex-col items-center justify-center transition-colors cursor-pointer ${
                 isDragActive
                   ? "border-brand bg-brand-faint"
-                  : "border-border-dashed bg-gray-50"
+                  : "border-border-dashed bg-gray-50 hover:border-brand/50 hover:bg-brand-faint/50"
               }`}
             >
               <input {...getInputProps()} />
@@ -180,7 +197,7 @@ export function SourceAddModal({
                 <>
                   <FileUp className="w-8 h-8 text-text-muted mb-2" />
                   <p className="text-[15px] font-medium text-text-secondary">
-                    또는 파일 드롭
+                    클릭 또는 파일 드롭
                   </p>
                   <p className="text-[13px] text-text-muted mt-1">
                     PDF, 이미지, 문서, 오디오 등

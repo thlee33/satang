@@ -38,15 +38,15 @@ import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 
 const STUDIO_TILES = [
-  { type: "audio_overview", label: "AI 오디오 오버뷰", icon: Headphones, bg: "bg-card-sky", enabled: false },
-  { type: "video_overview", label: "동영상 개요", icon: Video, bg: "bg-card-sky", enabled: false },
-  { type: "mind_map", label: "마인드맵", icon: Brain, bg: "bg-card-rose", enabled: true },
-  { type: "report", label: "보고서", icon: FileText, bg: "bg-card-rose", enabled: true },
-  { type: "flashcard", label: "플래시카드", icon: CreditCard, bg: "bg-card-emerald", enabled: true },
-  { type: "quiz", label: "퀴즈", icon: HelpCircle, bg: "bg-card-emerald", enabled: true },
-  { type: "infographic", label: "인포그래픽", icon: BarChart3, bg: "bg-card-amber", enabled: true },
-  { type: "slide_deck", label: "슬라이드 자료", icon: Presentation, bg: "bg-card-amber", enabled: true },
-  { type: "data_table", label: "데이터 표", icon: Table, bg: "bg-blue-50", enabled: false, fullWidth: true },
+  { type: "mind_map", label: "마인드맵", icon: Brain, gradient: "from-[#8B5CF6] to-[#EC4899]", enabled: true },
+  { type: "report", label: "보고서", icon: FileText, gradient: "from-[#EC4899] to-[#F43F5E]", enabled: true },
+  { type: "flashcard", label: "플래시카드", icon: CreditCard, gradient: "from-[#10B981] to-[#06B6D4]", enabled: true },
+  { type: "quiz", label: "퀴즈", icon: HelpCircle, gradient: "from-[#06B6D4] to-[#3B82F6]", enabled: true },
+  { type: "infographic", label: "인포그래픽", icon: BarChart3, gradient: "from-[#F59E0B] to-[#EF4444]", enabled: true },
+  { type: "slide_deck", label: "슬라이드 자료", icon: Presentation, gradient: "from-[#2563EB] to-[#7C3AED]", enabled: true },
+  { type: "audio_overview", label: "AI 오디오 오버뷰", icon: Headphones, gradient: "from-[#64748B] to-[#94A3B8]", enabled: false },
+  { type: "video_overview", label: "동영상 개요", icon: Video, gradient: "from-[#64748B] to-[#94A3B8]", enabled: false },
+  { type: "data_table", label: "데이터 표", icon: Table, gradient: "from-[#64748B] to-[#94A3B8]", enabled: false, fullWidth: true },
 ] as const;
 
 const OUTPUT_ICONS: Record<string, React.ReactNode> = {
@@ -135,24 +135,41 @@ export function StudioPanel({ notebookId }: StudioPanelProps) {
           <div className="grid grid-cols-2 gap-2">
             {STUDIO_TILES.map((tile) => {
               const Icon = tile.icon;
+              const isFullWidth = "fullWidth" in tile && tile.fullWidth;
               return (
-                <button
+                <div
                   key={tile.type}
-                  onClick={() => handleTileClick(tile.type, tile.enabled)}
-                  className={`${tile.bg} ${
-                    "fullWidth" in tile && tile.fullWidth ? "col-span-2" : ""
-                  } rounded-lg px-3 py-2.5 flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer group relative ${
-                    !tile.enabled ? "opacity-60" : ""
+                  className={`relative group rounded-xl ${isFullWidth ? "col-span-2" : ""} ${
+                    !tile.enabled ? "opacity-50" : ""
                   }`}
                 >
-                  <Icon className="w-4 h-4 text-text-secondary shrink-0" />
-                  <span className="text-xs font-medium text-text-secondary truncate">
-                    {tile.label}
-                  </span>
+                  {/* Rotating border sweep */}
                   {tile.enabled && (
-                    <Pencil className="w-3 h-3 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0" />
+                    <div className="absolute inset-0 rounded-xl overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-400 pointer-events-none z-0">
+                      <div className="absolute inset-[-50%] animate-[sweep-rotate_2.5s_linear_infinite] bg-[conic-gradient(from_0deg,transparent_0%,transparent_50%,rgba(255,255,255,0.7)_75%,transparent_95%)]" />
+                    </div>
                   )}
-                </button>
+                  <button
+                    onClick={() => handleTileClick(tile.type, tile.enabled)}
+                    className={`relative w-full bg-gradient-to-br ${tile.gradient} rounded-[11px] m-[1px] px-3 py-2.5 flex items-center gap-2 overflow-hidden transition-all duration-300 ${
+                      tile.enabled
+                        ? "card-glow-hover hover:shadow-lg cursor-pointer"
+                        : "cursor-not-allowed"
+                    }`}
+                  >
+                    {/* Shimmer glow blob */}
+                    {tile.enabled && (
+                      <div className="absolute -top-3 -right-3 w-12 h-12 bg-white/20 rounded-full blur-2xl transition-transform duration-500 group-hover:scale-150" />
+                    )}
+                    <Icon className="w-4 h-4 text-white/90 shrink-0 relative z-10" />
+                    <span className="text-xs font-medium text-white truncate relative z-10">
+                      {tile.label}
+                    </span>
+                    {tile.enabled && (
+                      <Pencil className="w-3 h-3 text-white/60 opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0 relative z-10" />
+                    )}
+                  </button>
+                </div>
               );
             })}
           </div>

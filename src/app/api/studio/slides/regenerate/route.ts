@@ -2,6 +2,19 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { editSlideImage, generateSlideImage, type SlideType, type DesignTheme } from "@/lib/ai/nano-banana";
 
+async function fetchUserThemePrompt(
+  adminClient: Awaited<ReturnType<typeof createServiceRoleClient>>,
+  designThemeId?: string,
+): Promise<string | undefined> {
+  if (!designThemeId) return undefined;
+  const { data } = await adminClient
+    .from("design_themes")
+    .select("prompt")
+    .eq("id", designThemeId)
+    .single();
+  return data?.prompt ?? undefined;
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();
@@ -55,6 +68,10 @@ export async function POST(request: Request) {
     const topic = slides[0]?.title || "프레젠테이션";
     const designTheme = content.designTheme || (output.content as Record<string, unknown>)?.designTheme as DesignTheme | undefined;
 
+    // 사용자 디자인 테마 프롬프트 조회
+    const adminClient = await createServiceRoleClient();
+    const userThemePrompt = await fetchUserThemePrompt(adminClient, settings.designThemeId);
+
     // 기존 이미지를 다운로드하여 편집 참조로 사용
     const existingImageUrl = (output.image_urls as string[])?.[slideIndex];
     let result: { imageData: string; mimeType: string };
@@ -78,6 +95,7 @@ export async function POST(request: Request) {
             slideType: (slide.type || "content") as SlideType,
             subtitle: slide.subtitle,
             designTheme,
+            userThemePrompt,
             language: settings.language || "ko",
             format: settings.format || "detailed",
             editPrompt: prompt,
@@ -98,6 +116,7 @@ export async function POST(request: Request) {
           slideType: (slide.type || "content") as SlideType,
           subtitle: slide.subtitle,
           designTheme,
+          userThemePrompt,
           language: settings.language || "ko",
           format: settings.format || "detailed",
           userPrompt: regenPrompt,
@@ -116,6 +135,7 @@ export async function POST(request: Request) {
         slideType: (slide.type || "content") as SlideType,
         subtitle: slide.subtitle,
         designTheme,
+        userThemePrompt,
         language: settings.language || "ko",
         format: settings.format || "detailed",
         userPrompt: regenPrompt,
@@ -123,7 +143,6 @@ export async function POST(request: Request) {
     }
 
     // Upload new image
-    const adminClient = await createServiceRoleClient();
     const ext = result.mimeType.includes("png") ? "png" : "jpg";
     const filePath = `${user.id}/outputs/${outputId}-slide-${slideIndex + 1}-${Date.now()}.${ext}`;
     const imageBuffer = Buffer.from(result.imageData, "base64");

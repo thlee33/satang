@@ -272,6 +272,7 @@ export async function editSlideImage(params: {
   slideType?: SlideType;
   subtitle?: string;
   designTheme?: DesignTheme;
+  userThemePrompt?: string;
   language: string;
   format: string;
   editPrompt: string;
@@ -287,6 +288,7 @@ export async function editSlideImage(params: {
     slideType = "content",
     subtitle,
     designTheme,
+    userThemePrompt,
     language,
     format,
     editPrompt,
@@ -304,8 +306,10 @@ export async function editSlideImage(params: {
     title: slideTitle, content: slideContent, format,
   });
 
-  const themeInstructions = designTheme
-    ? `Design Theme:\n- Primary color: ${designTheme.primaryColor}\n- Mood: ${designTheme.mood}\n- Style: ${designTheme.style}\n`
+  const themeInstructions = userThemePrompt
+    ? `Design Theme (apply consistently):\n${userThemePrompt}\n`
+    : designTheme
+    ? `Design Theme (apply consistently):\n- Primary color: ${designTheme.primaryColor}\n- Mood: ${designTheme.mood}\n- Style: ${designTheme.style}\n`
     : "";
 
   const prompt = `Edit this presentation slide based on the following instructions.

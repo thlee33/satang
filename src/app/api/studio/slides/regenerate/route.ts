@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase/server";
-import { generateSlideImage, type SlideType, type DesignTheme } from "@/lib/ai/nano-banana";
+import { editSlideImage, generateSlideImage, type SlideType, type DesignTheme } from "@/lib/ai/nano-banana";
 
 export async function POST(request: Request) {
   try {
@@ -55,24 +55,72 @@ export async function POST(request: Request) {
     const topic = slides[0]?.title || "프레젠테이션";
     const designTheme = content.designTheme || (output.content as Record<string, unknown>)?.designTheme as DesignTheme | undefined;
 
-    // Combine original prompt with regeneration prompt
-    const originalPrompt = settings.prompt || "";
-    const regenPrompt = [originalPrompt, prompt].filter(Boolean).join("\n");
+    // 기존 이미지를 다운로드하여 편집 참조로 사용
+    const existingImageUrl = (output.image_urls as string[])?.[slideIndex];
+    let result: { imageData: string; mimeType: string };
 
-    // Generate new image
-    const result = await generateSlideImage({
-      slideNumber: slideIndex + 1,
-      totalSlides: slides.length,
-      topic,
-      slideTitle: slide.title,
-      slideContent: slide.content,
-      slideType: (slide.type || "content") as SlideType,
-      subtitle: slide.subtitle,
-      designTheme,
-      language: settings.language || "ko",
-      format: settings.format || "detailed",
-      userPrompt: regenPrompt,
-    });
+    if (existingImageUrl) {
+      try {
+        const imgRes = await fetch(existingImageUrl);
+        if (imgRes.ok) {
+          const arrayBuffer = await imgRes.arrayBuffer();
+          const contentType = imgRes.headers.get("content-type") || "image/png";
+          const base64 = Buffer.from(arrayBuffer).toString("base64");
+
+          result = await editSlideImage({
+            existingImageBase64: base64,
+            existingImageMimeType: contentType,
+            slideNumber: slideIndex + 1,
+            totalSlides: slides.length,
+            topic,
+            slideTitle: slide.title,
+            slideContent: slide.content,
+            slideType: (slide.type || "content") as SlideType,
+            subtitle: slide.subtitle,
+            designTheme,
+            language: settings.language || "ko",
+            format: settings.format || "detailed",
+            editPrompt: prompt,
+          });
+        } else {
+          throw new Error("이미지 다운로드 실패");
+        }
+      } catch {
+        // Fallback: 기존 이미지 참조 실패 시 새로 생성
+        const originalPrompt = settings.prompt || "";
+        const regenPrompt = [originalPrompt, prompt].filter(Boolean).join("\n");
+        result = await generateSlideImage({
+          slideNumber: slideIndex + 1,
+          totalSlides: slides.length,
+          topic,
+          slideTitle: slide.title,
+          slideContent: slide.content,
+          slideType: (slide.type || "content") as SlideType,
+          subtitle: slide.subtitle,
+          designTheme,
+          language: settings.language || "ko",
+          format: settings.format || "detailed",
+          userPrompt: regenPrompt,
+        });
+      }
+    } else {
+      // 기존 이미지 없음: 새로 생성
+      const originalPrompt = settings.prompt || "";
+      const regenPrompt = [originalPrompt, prompt].filter(Boolean).join("\n");
+      result = await generateSlideImage({
+        slideNumber: slideIndex + 1,
+        totalSlides: slides.length,
+        topic,
+        slideTitle: slide.title,
+        slideContent: slide.content,
+        slideType: (slide.type || "content") as SlideType,
+        subtitle: slide.subtitle,
+        designTheme,
+        language: settings.language || "ko",
+        format: settings.format || "detailed",
+        userPrompt: regenPrompt,
+      });
+    }
 
     // Upload new image
     const adminClient = await createServiceRoleClient();

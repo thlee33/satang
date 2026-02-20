@@ -260,3 +260,102 @@ ${userPrompt ? `Additional instructions: ${userPrompt}` : ""}`;
     mimeType: imagePart.inlineData.mimeType as string,
   };
 }
+
+export async function editSlideImage(params: {
+  existingImageBase64: string;
+  existingImageMimeType: string;
+  slideNumber: number;
+  totalSlides: number;
+  topic: string;
+  slideTitle: string;
+  slideContent: string;
+  slideType?: SlideType;
+  subtitle?: string;
+  designTheme?: DesignTheme;
+  language: string;
+  format: string;
+  editPrompt: string;
+}): Promise<{ imageData: string; mimeType: string }> {
+  const {
+    existingImageBase64,
+    existingImageMimeType,
+    slideNumber,
+    totalSlides,
+    topic,
+    slideTitle,
+    slideContent,
+    slideType = "content",
+    subtitle,
+    designTheme,
+    language,
+    format,
+    editPrompt,
+  } = params;
+
+  const languageNames: Record<string, string> = {
+    ko: "Korean", en: "English", ja: "Japanese", zh: "Chinese",
+    es: "Spanish", fr: "French", de: "German",
+  };
+  const langName = languageNames[language] || "Korean";
+
+  const typePrompt = SLIDE_TYPE_PROMPTS[slideType]?.({
+    title: slideTitle, subtitle, content: slideContent, format,
+  }) ?? SLIDE_TYPE_PROMPTS.content({
+    title: slideTitle, content: slideContent, format,
+  });
+
+  const themeInstructions = designTheme
+    ? `Design Theme:\n- Primary color: ${designTheme.primaryColor}\n- Mood: ${designTheme.mood}\n- Style: ${designTheme.style}\n`
+    : "";
+
+  const prompt = `Edit this presentation slide based on the following instructions.
+Keep the overall design, layout, and theme consistent with the original.
+
+Slide ${slideNumber} of ${totalSlides} — Topic: ${topic}
+Language: ${langName}
+
+${typePrompt}
+
+${themeInstructions}Edit instructions: ${editPrompt}
+
+Requirements:
+- All text MUST be in ${langName}
+- 16:9 aspect ratio
+- Maintain the same visual style as the original slide
+- Only apply the requested changes`;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-3-pro-image-preview",
+    contents: [{
+      role: "user",
+      parts: [
+        { text: prompt },
+        {
+          inlineData: {
+            mimeType: existingImageMimeType,
+            data: existingImageBase64,
+          },
+        },
+      ],
+    }],
+    config: {
+      responseModalities: ["IMAGE"],
+      imageGenerationConfig: {
+        aspectRatio: "16:9",
+      },
+    } as Record<string, unknown>,
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const parts: any[] = response.candidates?.[0]?.content?.parts || [];
+  const imagePart = parts.find((p) => p.inlineData);
+
+  if (!imagePart?.inlineData) {
+    throw new Error(`슬라이드 ${slideNumber} 이미지 편집에 실패했습니다.`);
+  }
+
+  return {
+    imageData: imagePart.inlineData.data as string,
+    mimeType: imagePart.inlineData.mimeType as string,
+  };
+}

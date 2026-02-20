@@ -29,38 +29,50 @@ export async function POST(request: Request) {
 
     console.log(`[PDF] 첫 번째 URL: ${(imageUrls as string[])[0]?.substring(0, 120)}...`);
 
+    // 모든 이미지를 병렬로 다운로드
+    const fetchStart = Date.now();
+    const imageResults = await Promise.allSettled(
+      (imageUrls as string[]).map(async (url: string, idx: number) => {
+        const t0 = Date.now();
+        const res = await fetch(url);
+        const fetchElapsed = Date.now() - t0;
+
+        if (!res.ok) {
+          console.error(`[PDF] 이미지 ${idx + 1} fetch 실패: status=${res.status}, ${fetchElapsed}ms`);
+          throw new Error(`Failed: ${res.status}`);
+        }
+
+        const arrayBuffer = await res.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        console.log(`[PDF] 이미지 ${idx + 1} fetch 성공: ${(arrayBuffer.byteLength / 1024).toFixed(0)}KB, ${fetchElapsed}ms`);
+
+        const contentType = res.headers.get("content-type") || "";
+        const isJpeg =
+          contentType.includes("jpeg") ||
+          contentType.includes("jpg") ||
+          (bytes[0] === 0xff && bytes[1] === 0xd8);
+        const isPng =
+          contentType.includes("png") ||
+          (bytes[0] === 0x89 && bytes[1] === 0x50);
+
+        return { bytes, isJpeg, isPng };
+      })
+    );
+    console.log(`[PDF] 전체 이미지 fetch 완료: ${Date.now() - fetchStart}ms`);
+
     const pdfDoc = await PDFDocument.create();
     let successCount = 0;
     let failCount = 0;
 
-    for (let idx = 0; idx < (imageUrls as string[]).length; idx++) {
-      const url = (imageUrls as string[])[idx];
-      const t0 = Date.now();
-
-      const res = await fetch(url);
-      const fetchElapsed = Date.now() - t0;
-
-      if (!res.ok) {
+    // 순서를 유지하면서 PDF에 삽입
+    for (let idx = 0; idx < imageResults.length; idx++) {
+      const result = imageResults[idx];
+      if (result.status !== "fulfilled") {
         failCount++;
-        console.error(`[PDF] 이미지 ${idx + 1} fetch 실패: status=${res.status}, ${fetchElapsed}ms, url=${url.substring(0, 100)}`);
         continue;
       }
 
-      const arrayBuffer = await res.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-      console.log(`[PDF] 이미지 ${idx + 1} fetch 성공: ${(arrayBuffer.byteLength / 1024).toFixed(0)}KB, ${fetchElapsed}ms`);
-
-      // Detect image type from response headers or magic bytes
-      const contentType = res.headers.get("content-type") || "";
-      const isJpeg =
-        contentType.includes("jpeg") ||
-        contentType.includes("jpg") ||
-        (bytes[0] === 0xff && bytes[1] === 0xd8);
-      const isPng =
-        contentType.includes("png") ||
-        (bytes[0] === 0x89 && bytes[1] === 0x50);
-
-      console.log(`[PDF] 이미지 ${idx + 1} 타입: contentType="${contentType}", isJpeg=${isJpeg}, isPng=${isPng}`);
+      const { bytes, isJpeg, isPng } = result.value;
 
       let image;
       try {
@@ -69,7 +81,6 @@ export async function POST(request: Request) {
         } else if (isJpeg) {
           image = await pdfDoc.embedJpg(bytes);
         } else {
-          // Try JPEG first, then PNG as fallback
           try {
             image = await pdfDoc.embedJpg(bytes);
           } catch {
@@ -79,7 +90,7 @@ export async function POST(request: Request) {
       } catch (embedErr) {
         failCount++;
         console.error(`[PDF] 이미지 ${idx + 1} embed 실패:`, embedErr);
-        continue; // Skip unreadable images
+        continue;
       }
 
       // Scale image to fit A4 landscape (842 x 595 points)

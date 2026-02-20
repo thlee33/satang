@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { FileText, MessageSquare, Sparkles } from "lucide-react";
 import {
   ResizableHandle,
@@ -35,8 +36,10 @@ const MOBILE_TABS = [
 type MobileTab = (typeof MOBILE_TABS)[number]["id"];
 
 export function NotebookClient({ notebook, user }: NotebookClientProps) {
+  const searchParams = useSearchParams();
+  const autoUpload = searchParams.get("upload") === "true";
   const [title, setTitle] = useState(notebook.title);
-  const [mobileTab, setMobileTab] = useState<MobileTab>("chat");
+  const [mobileTab, setMobileTab] = useState<MobileTab>(autoUpload ? "sources" : "chat");
   const [showShareModal, setShowShareModal] = useState(false);
   const updateNotebook = useUpdateNotebook();
 
@@ -72,7 +75,7 @@ export function NotebookClient({ notebook, user }: NotebookClientProps) {
             maxSize="30%"
             className="border-r border-border-default"
           >
-            <SourcesPanel notebookId={notebook.id} />
+            <SourcesPanel notebookId={notebook.id} autoOpenUpload={autoUpload} />
           </ResizablePanel>
 
           <ResizableHandle withHandle />

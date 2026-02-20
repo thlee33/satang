@@ -35,10 +35,13 @@ export function HomeClient({ user }: HomeClientProps) {
   const deleteNotebook = useDeleteNotebook();
   const updateNotebook = useUpdateNotebook();
 
-  const handleNewNotebook = async () => {
+  const handleNewNotebook = async (options?: { upload?: boolean }) => {
     try {
       const notebook = await createNotebook.mutateAsync(undefined);
-      router.push(`/notebook/${notebook.id}`);
+      const url = options?.upload
+        ? `/notebook/${notebook.id}?upload=true`
+        : `/notebook/${notebook.id}`;
+      router.push(url);
     } catch {
       toast.error("노트북 생성에 실패했습니다.");
     }
@@ -122,7 +125,7 @@ export function HomeClient({ user }: HomeClientProps) {
                 <span>새 노트북 만들기</span>
               </button>
               <button
-                onClick={handleNewNotebook}
+                onClick={() => handleNewNotebook({ upload: true })}
                 className="group/btn flex items-center gap-2 px-6 py-3.5 bg-white/90 backdrop-blur-md text-text-primary rounded-full font-medium border border-border-default/80 hover:border-brand/30 hover:bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all w-full sm:w-auto justify-center"
               >
                 <span className="text-lg leading-none">📄</span>

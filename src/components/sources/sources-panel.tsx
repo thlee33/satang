@@ -37,10 +37,11 @@ function StatusIcon({ status }: { status: string }) {
 
 interface SourcesPanelProps {
   notebookId: string;
+  autoOpenUpload?: boolean;
 }
 
-export function SourcesPanel({ notebookId }: SourcesPanelProps) {
-  const [showAddModal, setShowAddModal] = useState(false);
+export function SourcesPanel({ notebookId, autoOpenUpload }: SourcesPanelProps) {
+  const [showAddModal, setShowAddModal] = useState(autoOpenUpload ?? false);
   const [selectedSource, setSelectedSource] = useState<Source | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const { data: sources = [], isLoading } = useSources(notebookId);

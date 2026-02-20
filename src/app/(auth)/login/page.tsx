@@ -30,7 +30,7 @@ export default function LoginPage() {
           <Image src="/images/logo.png" alt="Satang" width={72} height={48} className="h-12 w-auto mb-3" />
           <h1 className="text-xl font-bold text-text-primary">Satang</h1>
           <p className="text-sm text-text-tertiary mt-1">
-            AI 기반 지식 노트북
+            달달한 AI 지식 노트북
           </p>
         </div>
 

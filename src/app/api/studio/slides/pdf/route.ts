@@ -3,6 +3,9 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { PDFDocument } from "pdf-lib";
 
 export async function POST(request: Request) {
+  const startTime = Date.now();
+  console.log("[PDF] === 요청 시작 ===");
+
   try {
     const supabase = await createServerSupabaseClient();
     const {
@@ -10,10 +13,12 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
 
     if (!user) {
+      console.log("[PDF] 인증 실패");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { imageUrls, title } = await request.json();
+    console.log(`[PDF] 이미지 ${imageUrls?.length ?? 0}장, 제목: "${title}"`);
 
     if (!imageUrls || imageUrls.length === 0) {
       return NextResponse.json(
@@ -22,14 +27,28 @@ export async function POST(request: Request) {
       );
     }
 
-    const pdfDoc = await PDFDocument.create();
+    console.log(`[PDF] 첫 번째 URL: ${(imageUrls as string[])[0]?.substring(0, 120)}...`);
 
-    for (const url of imageUrls as string[]) {
+    const pdfDoc = await PDFDocument.create();
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let idx = 0; idx < (imageUrls as string[]).length; idx++) {
+      const url = (imageUrls as string[])[idx];
+      const t0 = Date.now();
+
       const res = await fetch(url);
-      if (!res.ok) continue;
+      const fetchElapsed = Date.now() - t0;
+
+      if (!res.ok) {
+        failCount++;
+        console.error(`[PDF] 이미지 ${idx + 1} fetch 실패: status=${res.status}, ${fetchElapsed}ms, url=${url.substring(0, 100)}`);
+        continue;
+      }
 
       const arrayBuffer = await res.arrayBuffer();
       const bytes = new Uint8Array(arrayBuffer);
+      console.log(`[PDF] 이미지 ${idx + 1} fetch 성공: ${(arrayBuffer.byteLength / 1024).toFixed(0)}KB, ${fetchElapsed}ms`);
 
       // Detect image type from response headers or magic bytes
       const contentType = res.headers.get("content-type") || "";
@@ -40,6 +59,8 @@ export async function POST(request: Request) {
       const isPng =
         contentType.includes("png") ||
         (bytes[0] === 0x89 && bytes[1] === 0x50);
+
+      console.log(`[PDF] 이미지 ${idx + 1} 타입: contentType="${contentType}", isJpeg=${isJpeg}, isPng=${isPng}`);
 
       let image;
       try {
@@ -55,7 +76,9 @@ export async function POST(request: Request) {
             image = await pdfDoc.embedPng(bytes);
           }
         }
-      } catch {
+      } catch (embedErr) {
+        failCount++;
+        console.error(`[PDF] 이미지 ${idx + 1} embed 실패:`, embedErr);
         continue; // Skip unreadable images
       }
 
@@ -87,10 +110,17 @@ export async function POST(request: Request) {
         width: drawWidth,
         height: drawHeight,
       });
+      successCount++;
     }
 
+    console.log(`[PDF] 이미지 처리 완료: 성공=${successCount}, 실패=${failCount}, 총 소요=${Date.now() - startTime}ms`);
+
+    const saveStart = Date.now();
     const pdfBytes = await pdfDoc.save();
+    console.log(`[PDF] PDF 저장 완료: ${(pdfBytes.byteLength / 1024).toFixed(0)}KB, ${Date.now() - saveStart}ms`);
+
     const filename = encodeURIComponent(title || "slides") + ".pdf";
+    console.log(`[PDF] === 응답 전송 (총 ${Date.now() - startTime}ms) ===`);
 
     return new Response(Buffer.from(pdfBytes), {
       headers: {
@@ -99,7 +129,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Slides PDF generation error:", error);
+    console.error(`[PDF] === 에러 발생 (${Date.now() - startTime}ms) ===`, error);
     return NextResponse.json(
       { error: "PDF 생성에 실패했습니다." },
       { status: 500 }

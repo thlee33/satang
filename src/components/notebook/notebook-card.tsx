@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Notebook } from "@/lib/supabase/types";
 import { formatDistanceToNow, format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -114,14 +114,14 @@ export function NotebookCard({
         </div>
 
         {/* Menu */}
-        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+        <div className="absolute top-3 right-3 opacity-30 group-hover:opacity-100 transition-opacity duration-300 z-20">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 onClick={(e) => e.preventDefault()}
                 className="p-1.5 rounded-full bg-black/10 hover:bg-black/20 backdrop-blur-md text-gray-700 shadow-sm transition-all cursor-pointer"
               >
-                <MoreVertical className="w-[18px] h-[18px]" />
+                <MoreHorizontal className="w-[18px] h-[18px]" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="z-50 border-white/20 bg-white/90 backdrop-blur-xl">
@@ -154,7 +154,7 @@ export function NotebookCard({
 
         {/* Content Group */}
         <div className="relative z-10 w-full">
-          <h3 className="text-[17px] font-bold text-gray-900 line-clamp-2 leading-snug transition-all">
+          <h3 className="text-[17px] font-bold text-gray-900 line-clamp-2 leading-snug transition-all pr-8">
             {notebook.title}
           </h3>
 

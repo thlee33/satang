@@ -40,10 +40,16 @@ export async function generateChatResponse(
   });
 }
 
-export async function generateText(prompt: string): Promise<string> {
+export async function generateText(
+  prompt: string,
+  options?: { maxOutputTokens?: number }
+): Promise<string> {
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: [{ role: "user", parts: [{ text: prompt }] }],
+    config: options?.maxOutputTokens
+      ? { maxOutputTokens: options.maxOutputTokens }
+      : undefined,
   });
 
   return response.text || "";

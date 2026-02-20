@@ -1,6 +1,6 @@
 "use client";
 
-import { Share2, Settings, Plus } from "lucide-react";
+import { Share2, Settings, Plus, Sparkles, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { UserMenu } from "./user-menu";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,9 @@ interface NotebookNavProps {
   notebookTitle: string;
   onTitleChange: (title: string) => void;
   onShare?: () => void;
+  sourceCount?: number;
+  onGenerateTitle?: () => void;
+  isGeneratingTitle?: boolean;
 }
 
 export function NotebookNav({
@@ -24,6 +27,9 @@ export function NotebookNav({
   notebookTitle,
   onTitleChange,
   onShare,
+  sourceCount = 0,
+  onGenerateTitle,
+  isGeneratingTitle = false,
 }: NotebookNavProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(notebookTitle);
@@ -77,12 +83,28 @@ export function NotebookNav({
           maxLength={200}
         />
       ) : (
-        <button
-          onClick={() => setIsEditing(true)}
-          className="text-[15px] font-semibold text-text-primary hover:text-brand transition-colors cursor-pointer truncate max-w-[400px]"
-        >
-          {notebookTitle}
-        </button>
+        <div className="flex items-center gap-1 min-w-0">
+          <button
+            onClick={() => setIsEditing(true)}
+            className="text-[15px] font-semibold text-text-primary hover:text-brand transition-colors cursor-pointer truncate max-w-[400px]"
+          >
+            {notebookTitle}
+          </button>
+          {sourceCount > 0 && onGenerateTitle && (
+            <button
+              onClick={onGenerateTitle}
+              disabled={isGeneratingTitle}
+              className="p-1 rounded-md hover:bg-gray-100 text-text-tertiary hover:text-brand transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 shrink-0"
+              title="AI 제목 추천"
+            >
+              {isGeneratingTitle ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+            </button>
+          )}
+        </div>
       )}
 
       <div className="flex-1" />

@@ -14,6 +14,7 @@ import { ChatPanel } from "@/components/chat/chat-panel";
 import { StudioPanel } from "@/components/studio/studio-panel";
 import { ShareModal } from "@/components/shared/share-modal";
 import { useUpdateNotebook } from "@/hooks/use-notebooks";
+import { useSources } from "@/hooks/use-sources";
 import { cn } from "@/lib/utils";
 import type { Notebook } from "@/lib/supabase/types";
 import { toast } from "sonner";
@@ -41,7 +42,10 @@ export function NotebookClient({ notebook, user }: NotebookClientProps) {
   const [title, setTitle] = useState(notebook.title);
   const [mobileTab, setMobileTab] = useState<MobileTab>(autoUpload ? "sources" : "chat");
   const [showShareModal, setShowShareModal] = useState(false);
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
   const updateNotebook = useUpdateNotebook();
+  const { data: sources } = useSources(notebook.id);
+  const sourceCount = sources?.filter((s) => s.processing_status === "completed").length ?? 0;
 
   const handleTitleChange = async (newTitle: string) => {
     setTitle(newTitle);
@@ -50,6 +54,27 @@ export function NotebookClient({ notebook, user }: NotebookClientProps) {
     } catch {
       toast.error("제목 변경에 실패했습니다.");
       setTitle(notebook.title);
+    }
+  };
+
+  const handleGenerateTitle = async () => {
+    setIsGeneratingTitle(true);
+    try {
+      const res = await fetch("/api/notebook/suggest-title", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notebookId: notebook.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      const newTitle = data.title;
+      setTitle(newTitle);
+      await updateNotebook.mutateAsync({ id: notebook.id, title: newTitle });
+      toast.success("제목이 변경되었습니다.");
+    } catch {
+      toast.error("제목 추천에 실패했습니다.");
+    } finally {
+      setIsGeneratingTitle(false);
     }
   };
 
@@ -64,6 +89,9 @@ export function NotebookClient({ notebook, user }: NotebookClientProps) {
         notebookTitle={title}
         onTitleChange={handleTitleChange}
         onShare={handleShare}
+        sourceCount={sourceCount}
+        onGenerateTitle={handleGenerateTitle}
+        isGeneratingTitle={isGeneratingTitle}
       />
 
       {/* Desktop: 3-panel resizable layout */}

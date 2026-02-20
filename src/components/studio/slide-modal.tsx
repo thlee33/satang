@@ -147,7 +147,7 @@ export function SlideModal({ open, onClose, notebookId }: SlideModalProps) {
           {/* Depth */}
           <div>
             <label className="text-[13px] font-medium text-text-secondary block mb-2">
-              깊이
+              슬라이드 길이
             </label>
             <div className="flex gap-2">
               {DEPTHS.map((d) => (

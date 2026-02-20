@@ -143,7 +143,7 @@ export function HomeClient({ user }: HomeClientProps) {
             {Array.from({ length: 10 }).map((_, i) => (
               <div
                 key={i}
-                className="rounded-xl h-[200px] bg-slate-100 animate-pulse ring-1 ring-border-default/50"
+                className="rounded-xl h-[160px] bg-slate-100 animate-pulse ring-1 ring-border-default/50"
               />
             ))}
           </div>
@@ -191,7 +191,6 @@ export function HomeClient({ user }: HomeClientProps) {
                   href={`/notebook/${notebook.id}`}
                   className="group flex items-center gap-4 h-16 px-5 rounded-2xl bg-white border border-border-default hover:border-brand/30 hover:shadow-card-hover transition-all duration-300"
                 >
-                  <span className="text-2xl group-hover:scale-110 transition-transform">{notebook.emoji}</span>
                   <span className="text-[15px] font-semibold text-text-primary flex-1 truncate group-hover:text-brand transition-colors">
                     {notebook.title}
                   </span>

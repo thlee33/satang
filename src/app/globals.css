@@ -73,3 +73,54 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+
+/* Card hover animations */
+@keyframes sweep-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.card-glow-hover {
+  transition: filter 0.5s ease, box-shadow 0.5s ease;
+}
+
+.card-glow-hover:hover {
+  filter: brightness(1.15);
+}
+
+.border-sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  padding: 2px;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.group:hover .border-sweep {
+  opacity: 1;
+}
+
+.border-sweep-inner {
+  position: absolute;
+  inset: -50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.7) 75%,
+    transparent 95%
+  );
+  animation: sweep-rotate 2.5s linear infinite;
+}

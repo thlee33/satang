@@ -102,12 +102,10 @@ export function useSendMessage(notebookId: string) {
           (old) => [...(old || []), assistantMessage]
         );
 
-        // DB 저장 완료를 기다린 후 실제 데이터로 갱신
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["chat-messages", notebookId],
-          });
-        }, 2000);
+        // flush()에서 DB 저장 완료 후 스트림이 닫히므로 바로 갱신
+        queryClient.invalidateQueries({
+          queryKey: ["chat-messages", notebookId],
+        });
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") {
           // Aborted by user — still refresh messages

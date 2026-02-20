@@ -80,35 +80,29 @@ ${sourceContext}`;
       message
     );
 
-    // We need to collect the full response to save it
-    const [streamForClient, streamForSave] = stream.tee();
+    // 스트림을 통과시키면서 전체 내용을 수집하고, 종료 시 DB에 저장
+    const decoder = new TextDecoder();
+    let fullContent = "";
 
-    // Save assistant response in background
-    const saveResponse = async () => {
-      const reader = streamForSave.getReader();
-      const decoder = new TextDecoder();
-      let fullContent = "";
+    const passthrough = new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        fullContent += decoder.decode(chunk, { stream: true });
+        controller.enqueue(chunk);
+      },
+      async flush() {
+        if (fullContent) {
+          await supabase.from("chat_messages").insert({
+            notebook_id: notebookId,
+            user_id: user.id,
+            role: "assistant" as const,
+            content: fullContent,
+            model: "gemini-3-flash-preview",
+          });
+        }
+      },
+    });
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        fullContent += decoder.decode(value, { stream: true });
-      }
-
-      if (fullContent) {
-        await supabase.from("chat_messages").insert({
-          notebook_id: notebookId,
-          user_id: user.id,
-          role: "assistant" as const,
-          content: fullContent,
-          model: "gemini-3-flash-preview",
-        });
-      }
-    };
-
-    saveResponse().catch(console.error);
-
-    return new Response(streamForClient, {
+    return new Response(stream.pipeThrough(passthrough), {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Transfer-Encoding": "chunked",

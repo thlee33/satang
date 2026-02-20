@@ -354,6 +354,14 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const images = output.image_urls || [];
 
+  // Preload all slide images into browser cache
+  useEffect(() => {
+    images.forEach((url) => {
+      const img = new window.Image();
+      img.src = url;
+    });
+  }, [images]);
+
   const isSlides = output.type === "slide_deck" && images.length > 1;
   const isGenerating = output.generation_status === "generating";
   const isTextBased = TEXT_BASED_TYPES.includes(output.type);

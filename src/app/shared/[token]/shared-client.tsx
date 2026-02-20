@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import {
-  BookOpen, FileText, Globe, FileImage, Headphones,
+  FileText, Globe, FileImage, Headphones,
   Brain, BarChart3, Presentation, CreditCard, HelpCircle,
 } from "lucide-react";
+import Image from "next/image";
 import { ContentViewer } from "@/components/studio/content-viewer";
 import type { Notebook, Source, StudioOutput } from "@/lib/supabase/types";
 
@@ -42,9 +43,7 @@ export function SharedNotebookClient({
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="h-14 border-b border-border-default bg-white flex items-center px-4 gap-3">
-        <div className="w-7 h-7 bg-brand rounded-lg flex items-center justify-center">
-          <BookOpen className="w-4 h-4 text-white" />
-        </div>
+        <Image src="/images/logo.png" alt="Satang" width={36} height={24} className="h-6 w-auto" />
         <span className="text-lg font-bold text-text-primary">Satang</span>
         <span className="text-text-muted mx-2">|</span>
         <span className="text-lg">{notebook.emoji}</span>

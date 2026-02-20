@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { BookOpen, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import Image from "next/image";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,9 +27,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-[#EDE9FE]">
       <div className="w-full max-w-[400px] bg-white rounded-2xl shadow-lg p-12">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 bg-brand rounded-xl flex items-center justify-center mb-3">
-            <BookOpen className="w-7 h-7 text-white" />
-          </div>
+          <Image src="/images/logo.png" alt="Satang" width={72} height={48} className="h-12 w-auto mb-3" />
           <h1 className="text-xl font-bold text-text-primary">Satang</h1>
           <p className="text-sm text-text-tertiary mt-1">
             AI 기반 지식 노트북

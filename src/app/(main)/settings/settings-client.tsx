@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { BookOpen, ArrowLeft, LogOut, Plus, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, LogOut, Plus, Pencil, Trash2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   useDesignThemes,
@@ -72,9 +73,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-brand rounded flex items-center justify-center">
-            <BookOpen className="w-3.5 h-3.5 text-white" />
-          </div>
+          <Image src="/images/logo.png" alt="Satang" width={30} height={20} className="h-5 w-auto" />
           <span className="text-[15px] font-semibold text-text-primary">
             설정
           </span>

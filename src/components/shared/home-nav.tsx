@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, Grid3X3, List, Search, X } from "lucide-react";
+import { Grid3X3, List, Search, X } from "lucide-react";
+import Image from "next/image";
 import { UserMenu } from "./user-menu";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -41,10 +42,8 @@ export function HomeNav({
   return (
     <header className="sticky top-0 z-50 h-[64px] border-b border-border-default/50 bg-white/70 backdrop-blur-xl flex items-center px-6 gap-6 transition-all">
       {/* Logo */}
-      <div className="flex items-center gap-2 mr-4">
-        <div className="w-7 h-7 bg-brand rounded-lg flex items-center justify-center">
-          <BookOpen className="w-4 h-4 text-white" />
-        </div>
+      <div className="flex items-center gap-1.5 mr-4">
+        <Image src="/images/logo.png" alt="Satang" width={36} height={24} className="h-6 w-auto" />
         <span className="text-lg font-bold text-text-primary">Satang</span>
       </div>
 

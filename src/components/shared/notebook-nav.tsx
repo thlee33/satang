@@ -1,6 +1,7 @@
 "use client";
 
-import { BookOpen, Share2, Settings, Plus } from "lucide-react";
+import { Share2, Settings, Plus } from "lucide-react";
+import Image from "next/image";
 import { UserMenu } from "./user-menu";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -60,11 +61,8 @@ export function NotebookNav({
   return (
     <header className="h-12 border-b border-border-default bg-white flex items-center px-4 gap-3">
       {/* Logo */}
-      <Link
-        href="/"
-        className="w-6 h-6 bg-brand rounded flex items-center justify-center hover:bg-brand-hover transition-colors"
-      >
-        <BookOpen className="w-3.5 h-3.5 text-white" />
+      <Link href="/" className="hover:opacity-80 transition-opacity">
+        <Image src="/images/logo.png" alt="Satang" width={30} height={20} className="h-5 w-auto" />
       </Link>
 
       {/* Title */}

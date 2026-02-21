@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  Download, ChevronLeft, ChevronRight, RotateCcw, RefreshCw, Check, X, FileDown, FileText, Loader2, Send,
+  Download, ChevronLeft, ChevronRight, RotateCcw, RefreshCw, Check, X, FileDown, FileText, Loader2, Send, Presentation,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
@@ -381,6 +382,7 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
 
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pptxLoading, setPptxLoading] = useState(false);
+  const [googleSlidesLoading, setGoogleSlidesLoading] = useState(false);
   const [regenOpen, setRegenOpen] = useState(false);
   const [regenPrompt, setRegenPrompt] = useState("");
   const [regenLoading, setRegenLoading] = useState(false);
@@ -481,6 +483,43 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
     }
   };
 
+  const handleExportGoogleSlides = async () => {
+    setGoogleSlidesLoading(true);
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const providerToken = session?.provider_token;
+
+      if (!providerToken) {
+        toast.error("Google 인증이 만료되었습니다. 다시 로그인해주세요.");
+        return;
+      }
+
+      const response = await fetch("/api/studio/slides/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageUrls: images,
+          title: output.title,
+          providerToken,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Google Slides 내보내기 실패");
+      }
+
+      const { url } = await response.json();
+      window.open(url, "_blank");
+      toast.success("Google Slides에 내보내기 완료!");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Google Slides 내보내기에 실패했습니다.");
+    } finally {
+      setGoogleSlidesLoading(false);
+    }
+  };
+
   // Clamp currentSlide to valid range for available images
   const safeSlide = Math.min(currentSlide, Math.max(0, images.length - 1));
 
@@ -516,6 +555,14 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
                         <FileDown className="w-4 h-4 sm:mr-1" />
                       )}
                       <span className="hidden sm:inline">{pdfLoading ? "생성 중..." : "PDF"}</span>
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleExportGoogleSlides} disabled={googleSlidesLoading} className="px-2 sm:px-3">
+                      {googleSlidesLoading ? (
+                        <Loader2 className="w-4 h-4 sm:mr-1 animate-spin" />
+                      ) : (
+                        <Presentation className="w-4 h-4 sm:mr-1" />
+                      )}
+                      <span className="hidden sm:inline">{googleSlidesLoading ? "내보내는 중..." : "Google Slides"}</span>
                     </Button>
                   </>
                 )}

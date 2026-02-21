@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -353,6 +353,7 @@ function QuizContent({ output }: { output: StudioOutput }) {
 
 export function ContentViewer({ output, onClose }: ContentViewerProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<"left" | "right">("right");
   const images = output.image_urls || [];
 
   // Preload all slide images into browser cache
@@ -367,6 +368,60 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
   const isGenerating = output.generation_status === "generating";
   const isTextBased = TEXT_BASED_TYPES.includes(output.type);
   const isReport = output.type === "report";
+
+  // Slide navigation helpers
+  const goNext = useCallback(() => {
+    setSlideDirection("right");
+    setCurrentSlide((prev) => Math.min(images.length - 1, prev + 1));
+  }, [images.length]);
+
+  const goPrev = useCallback(() => {
+    setSlideDirection("left");
+    setCurrentSlide((prev) => Math.max(0, prev - 1));
+  }, []);
+
+  const goToSlide = useCallback((index: number) => {
+    if (index === currentSlide) return;
+    setSlideDirection(index > currentSlide ? "right" : "left");
+    setCurrentSlide(index);
+  }, [currentSlide]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!isSlides && !(isGenerating && images.length > 1)) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") goPrev();
+      else if (e.key === "ArrowRight") goNext();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSlides, isGenerating, images.length, goNext, goPrev]);
+
+  // Touch/swipe support
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const isSwiping = useRef(false);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isSwiping.current = false;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const dx = Math.abs(e.touches[0].clientX - touchStartX.current);
+    const dy = Math.abs(e.touches[0].clientY - touchStartY.current);
+    if (dx > dy && dx > 10) isSwiping.current = true;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!isSwiping.current) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) goNext();
+      else goPrev();
+    }
+  }, [goNext, goPrev]);
 
   const progress = (output.content as Record<string, unknown>)?.progress as
     { completed?: number; total?: number; phase?: string; failed?: number } | undefined;
@@ -644,24 +699,32 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
 
               {/* Show completed slides preview during generation */}
               {images.length > 0 && (
-                <div className="relative w-full mt-4 flex items-center justify-center">
+                <div
+                  className="relative w-full mt-4 flex items-center justify-center overflow-hidden"
+                  onTouchStart={images.length > 1 ? handleTouchStart : undefined}
+                  onTouchMove={images.length > 1 ? handleTouchMove : undefined}
+                  onTouchEnd={images.length > 1 ? handleTouchEnd : undefined}
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
+                    key={safeSlide}
                     src={images[safeSlide]}
                     alt={`슬라이드 ${safeSlide + 1}`}
-                    className="max-w-full max-h-[40vh] object-contain rounded-lg"
+                    className={`max-w-full max-h-[40vh] object-contain rounded-lg ${
+                      images.length > 1 ? (slideDirection === "right" ? "animate-slide-right" : "animate-slide-left") : ""
+                    }`}
                   />
                   {images.length > 1 && (
                     <>
                       <button
-                        onClick={() => setCurrentSlide((prev) => Math.max(0, prev - 1))}
+                        onClick={goPrev}
                         disabled={safeSlide === 0}
                         className="absolute left-2 p-2 bg-white/80 rounded-full shadow hover:bg-white disabled:opacity-30 cursor-pointer"
                       >
                         <ChevronLeft className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => setCurrentSlide((prev) => Math.min(images.length - 1, prev + 1))}
+                        onClick={goNext}
                         disabled={safeSlide === images.length - 1}
                         className="absolute right-2 p-2 bg-white/80 rounded-full shadow hover:bg-white disabled:opacity-30 cursor-pointer"
                       >
@@ -679,32 +742,34 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
             </div>
           ) : images.length > 0 ? (
             <div className="flex flex-col items-center w-full">
-              <div className="relative flex items-center justify-center w-full">
+              <div
+                className="relative flex items-center justify-center w-full overflow-hidden"
+                onTouchStart={isSlides ? handleTouchStart : undefined}
+                onTouchMove={isSlides ? handleTouchMove : undefined}
+                onTouchEnd={isSlides ? handleTouchEnd : undefined}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
+                  key={isSlides ? currentSlide : 0}
                   src={images[isSlides ? currentSlide : 0]}
                   alt={output.title}
-                  className={`max-w-full object-contain rounded-lg ${regenOpen ? "max-h-[55vh]" : "max-h-[75vh]"}`}
+                  className={`max-w-full object-contain rounded-lg ${regenOpen ? "max-h-[55vh]" : "max-h-[75vh]"} ${
+                    isSlides ? (slideDirection === "right" ? "animate-slide-right" : "animate-slide-left") : ""
+                  }`}
                 />
 
                 {/* Slide Navigation */}
                 {isSlides && (
                   <>
                     <button
-                      onClick={() =>
-                        setCurrentSlide((prev) => Math.max(0, prev - 1))
-                      }
+                      onClick={goPrev}
                       disabled={currentSlide === 0}
                       className="absolute left-2 p-2 bg-white/80 rounded-full shadow hover:bg-white disabled:opacity-30 cursor-pointer"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={() =>
-                        setCurrentSlide((prev) =>
-                          Math.min(images.length - 1, prev + 1)
-                        )
-                      }
+                      onClick={goNext}
                       disabled={currentSlide === images.length - 1}
                       className="absolute right-2 p-2 bg-white/80 rounded-full shadow hover:bg-white disabled:opacity-30 cursor-pointer"
                     >
@@ -779,7 +844,7 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
               {images.map((_, i) => (
                 <button
                   key={i}
-                  onClick={() => setCurrentSlide(i)}
+                  onClick={() => goToSlide(i)}
                   className={`w-2 h-2 rounded-full transition-colors cursor-pointer shrink-0 ${
                     i === (isGenerating ? safeSlide : currentSlide) ? "bg-brand" : "bg-gray-300"
                   }`}

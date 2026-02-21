@@ -335,7 +335,7 @@ export function SlideModal({ open, onClose, notebookId }: SlideModalProps) {
             </Button>
             <Button
               onClick={handleGenerate}
-              disabled={generate.isPending || !prompt.trim()}
+              disabled={generate.isPending}
               className="bg-brand hover:bg-brand-hover text-white px-7 shadow-md shadow-brand/20 transition-all font-semibold"
             >
               {generate.isPending ? (

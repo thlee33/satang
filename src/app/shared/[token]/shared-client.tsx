@@ -43,7 +43,7 @@ export function SharedNotebookClient({
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="h-14 border-b border-border-default bg-white flex items-center px-4 gap-3">
-        <Image src="/images/logo_satang.png" alt="Satang" width={36} height={24} className="h-6 w-auto" />
+        <Image src="/images/logo.png" alt="Satang" width={36} height={24} className="h-6 w-auto" />
         <span className="text-lg font-bold text-text-primary">Satang</span>
         <span className="text-text-muted mx-2">|</span>
         <span className="text-lg">{notebook.emoji}</span>

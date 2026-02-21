@@ -73,7 +73,7 @@ export function SettingsClient({ user }: SettingsClientProps) {
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className="flex items-center gap-2">
-          <Image src="/images/logo_satang.png" alt="Satang" width={30} height={20} className="h-5 w-auto" />
+          <Image src="/images/logo.png" alt="Satang" width={30} height={20} className="h-5 w-auto" />
           <span className="text-[15px] font-semibold text-text-primary">
             설정
           </span>

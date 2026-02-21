@@ -68,7 +68,7 @@ export function NotebookNav({
     <header className="h-12 border-b border-border-default bg-white flex items-center px-4 gap-3">
       {/* Logo */}
       <Link href="/" className="hover:opacity-80 transition-opacity">
-        <Image src="/images/logo_satang.png" alt="Satang" width={30} height={20} className="h-5 w-auto" />
+        <Image src="/images/logo.png" alt="Satang" width={30} height={20} className="h-5 w-auto" />
       </Link>
 
       {/* Title */}

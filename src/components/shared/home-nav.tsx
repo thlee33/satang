@@ -43,7 +43,7 @@ export function HomeNav({
     <header className="sticky top-0 z-50 h-[64px] border-b border-border-default/50 bg-white/70 backdrop-blur-xl flex items-center px-6 gap-6 transition-all">
       {/* Logo */}
       <div className="flex items-center gap-1.5 mr-4">
-        <Image src="/images/logo_satang.png" alt="Satang" width={36} height={24} className="h-6 w-auto" />
+        <Image src="/images/logo.png" alt="Satang" width={36} height={24} className="h-6 w-auto" />
         <span className="text-lg font-bold text-text-primary">Satang</span>
       </div>
 

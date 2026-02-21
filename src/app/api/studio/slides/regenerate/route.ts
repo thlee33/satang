@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { outputId, slideIndex, prompt } = await request.json();
+    const { outputId, slideIndex, prompt, referenceImageBase64, referenceImageMimeType } = await request.json();
 
     if (!outputId || slideIndex === undefined) {
       return NextResponse.json(
@@ -99,6 +99,8 @@ export async function POST(request: Request) {
             language: settings.language || "ko",
             format: settings.format || "detailed",
             editPrompt: prompt,
+            referenceImageBase64,
+            referenceImageMimeType,
           });
         } else {
           throw new Error("이미지 다운로드 실패");

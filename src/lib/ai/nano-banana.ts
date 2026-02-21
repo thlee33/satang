@@ -281,6 +281,8 @@ export async function editSlideImage(params: {
   language: string;
   format: string;
   editPrompt: string;
+  referenceImageBase64?: string;
+  referenceImageMimeType?: string;
 }): Promise<{ imageData: string; mimeType: string }> {
   const {
     existingImageBase64,
@@ -297,6 +299,8 @@ export async function editSlideImage(params: {
     language,
     format,
     editPrompt,
+    referenceImageBase64,
+    referenceImageMimeType,
   } = params;
 
   const languageNames: Record<string, string> = {
@@ -317,6 +321,10 @@ export async function editSlideImage(params: {
     ? `Design Theme (apply consistently):\n- Primary color: ${designTheme.primaryColor}\n- Mood: ${designTheme.mood}\n- Style: ${designTheme.style}\n`
     : "";
 
+  const referenceImageInstruction = referenceImageBase64
+    ? "\nA reference image is provided. Use it as visual reference or incorporate it into the slide as instructed.\n"
+    : "";
+
   const prompt = `Edit this presentation slide based on the following instructions.
 Keep the overall design, layout, and theme consistent with the original.
 
@@ -325,7 +333,7 @@ Language: ${langName}
 
 ${typePrompt}
 
-${themeInstructions}Edit instructions: ${editPrompt}
+${themeInstructions}${referenceImageInstruction}Edit instructions: ${editPrompt}
 
 Requirements:
 - All text MUST be in ${langName}
@@ -333,19 +341,31 @@ Requirements:
 - Maintain the same visual style as the original slide
 - Only apply the requested changes`;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const requestParts: any[] = [
+    { text: prompt },
+    {
+      inlineData: {
+        mimeType: existingImageMimeType,
+        data: existingImageBase64,
+      },
+    },
+  ];
+
+  if (referenceImageBase64 && referenceImageMimeType) {
+    requestParts.push({
+      inlineData: {
+        mimeType: referenceImageMimeType,
+        data: referenceImageBase64,
+      },
+    });
+  }
+
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-image-preview",
     contents: [{
       role: "user",
-      parts: [
-        { text: prompt },
-        {
-          inlineData: {
-            mimeType: existingImageMimeType,
-            data: existingImageBase64,
-          },
-        },
-      ],
+      parts: requestParts,
     }],
     config: {
       responseModalities: ["IMAGE"],

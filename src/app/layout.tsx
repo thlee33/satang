@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Script from "next/script";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -19,18 +19,6 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-3MR8Q9MB7X"
-          strategy="afterInteractive"
-        />
-        <Script id="gtag-init" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-3MR8Q9MB7X');
-          `}
-        </Script>
         <link
           rel="stylesheet"
           as="style"
@@ -44,6 +32,7 @@ export default function RootLayout({
         </QueryProvider>
         <Toaster position="bottom-right" richColors />
         <SpeedInsights />
+        <GoogleAnalytics gaId="G-3MR8Q9MB7X" />
       </body>
     </html>
   );

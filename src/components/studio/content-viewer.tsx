@@ -26,30 +26,73 @@ interface MindMapBranch {
   children?: MindMapBranch[];
 }
 
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+
 const DEPTH_COLORS = [
-  "bg-brand",
-  "bg-blue-500",
-  "bg-violet-400",
-  "bg-gray-400",
+  "border-brand/70 bg-brand/5", // Depth 0: Central node
+  "border-blue-400 bg-blue-50", // Depth 1
+  "border-violet-400 bg-violet-50", // Depth 2
+  "border-amber-400 bg-amber-50", // Depth 3
+  "border-emerald-400 bg-emerald-50", // Depth 4
+  "border-gray-300 bg-gray-50", // Depth 5+
+];
+
+const TEXT_COLORS = [
+  "text-brand-dark font-bold text-lg",
+  "text-blue-900 font-semibold text-base",
+  "text-violet-900 font-medium text-sm",
+  "text-amber-900 font-medium text-sm",
+  "text-emerald-900 font-medium text-sm",
+  "text-gray-700 font-medium text-sm",
 ];
 
 function MindMapTree({ branches, depth = 0 }: { branches: MindMapBranch[]; depth?: number }) {
+  if (!branches || branches.length === 0) return null;
+
   return (
-    <ul className={`${depth === 0 ? "" : "ml-6 border-l-2 border-gray-100 pl-4"} space-y-2`}>
-      {branches.map((branch, i) => (
-        <li key={i}>
-          <div className="flex items-start gap-2.5">
-            <span className={`shrink-0 mt-1.5 w-2.5 h-2.5 rounded-full ${DEPTH_COLORS[Math.min(depth, DEPTH_COLORS.length - 1)]}`} />
-            <span className={`text-[14px] leading-relaxed ${depth === 0 ? "font-semibold text-text-primary" : depth === 1 ? "font-medium text-text-primary" : "text-text-secondary"}`}>
-              {branch.topic}
-            </span>
+    <div className="flex flex-col gap-4 py-2">
+      {branches.map((branch, i) => {
+        const hasChildren = branch.children && branch.children.length > 0;
+        const colorIdx = Math.min(depth + 1, DEPTH_COLORS.length - 1);
+
+        return (
+          <div key={i} className="flex items-center relative gap-8">
+            {/* Horizontal line connecting to parent */}
+            <div className="absolute -left-8 top-1/2 w-8 border-t-2 border-gray-300 transform -translate-y-1/2 rounded-l-full" />
+
+            {/* Vertical connector for siblings (except if it's the only child) */}
+            {branches.length > 1 && (
+              <div
+                className={`absolute -left-8 border-l-2 border-gray-300
+                  ${i === 0 ? 'top-1/2 h-1/2' : ''} 
+                  ${i === branches.length - 1 ? 'bottom-1/2 h-1/2 top-0' : ''} 
+                  ${i > 0 && i < branches.length - 1 ? 'inset-y-0' : ''}
+                `}
+              />
+            )}
+
+            {/* Node */}
+            <div className={`relative z-10 px-4 py-2 rounded-xl border-2 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 whitespace-nowrap ${DEPTH_COLORS[colorIdx]}`}>
+              <span className={TEXT_COLORS[colorIdx]}>
+                {branch.topic}
+              </span>
+
+              {/* Connector dot for children */}
+              {hasChildren && (
+                <div className="absolute -right-1 top-1/2 w-2 h-2 rounded-full bg-gray-400 transform -translate-y-1/2" />
+              )}
+            </div>
+
+            {/* Children container */}
+            {hasChildren && (
+              <div className="pl-8">
+                <MindMapTree branches={branch.children!} depth={depth + 1} />
+              </div>
+            )}
           </div>
-          {branch.children && branch.children.length > 0 && (
-            <MindMapTree branches={branch.children} depth={depth + 1} />
-          )}
-        </li>
-      ))}
-    </ul>
+        );
+      })}
+    </div>
   );
 }
 
@@ -67,14 +110,46 @@ function MindMapContent({ output }: { output: StudioOutput }) {
     );
   }
 
+  const hasChildren = mindmap.branches && mindmap.branches.length > 0;
+
   return (
-    <div className="p-6 max-w-3xl mx-auto w-full">
-      <div className="text-center mb-8">
-        <span className="inline-block px-6 py-2.5 bg-brand text-white rounded-full text-[15px] font-bold shadow-sm">
-          {mindmap.central || "마인드맵"}
-        </span>
-      </div>
-      {mindmap.branches && <MindMapTree branches={mindmap.branches} />}
+    <div className="w-full h-[60vh] min-h-[400px] border border-gray-200 rounded-xl bg-gray-50/50 overflow-hidden relative cursor-grab active:cursor-grabbing">
+      <TransformWrapper
+        initialScale={1}
+        minScale={0.2}
+        maxScale={3}
+        centerOnInit={true}
+        wheel={{ step: 0.1 }}
+      >
+        <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
+          <div className="p-20 flex items-center justify-center min-w-max min-h-max">
+            <div className="flex items-center gap-8">
+              {/* Central Node */}
+              <div className={`relative z-10 px-6 py-4 rounded-2xl border-2 shadow-md transition-all hover:shadow-lg whitespace-nowrap ${DEPTH_COLORS[0]}`}>
+                <span className={TEXT_COLORS[0]}>
+                  {mindmap.central || "마인드맵"}
+                </span>
+                {/* Connector dot for root children */}
+                {hasChildren && (
+                  <div className="absolute -right-1.5 top-1/2 w-3 h-3 rounded-full bg-brand transform -translate-y-1/2" />
+                )}
+              </div>
+
+              {/* Branches Container */}
+              {hasChildren && (
+                <div className="pl-0">
+                  <MindMapTree branches={mindmap.branches!} depth={0} />
+                </div>
+              )}
+            </div>
+          </div>
+        </TransformComponent>
+
+        {/* Helper overlay */}
+        <div className="absolute bottom-4 right-4 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm text-xs text-gray-500 font-medium pointer-events-none">
+          마우스 휠로 확대/축소, 드래그하여 이동
+        </div>
+      </TransformWrapper>
     </div>
   );
 }
@@ -119,9 +194,8 @@ function FlashcardContent({ output }: { output: StudioOutput }) {
           <button
             key={i}
             onClick={() => { setCurrentCard(i); setFlipped(false); }}
-            className={`rounded-full transition-all cursor-pointer ${
-              i === currentCard ? "w-6 h-2 bg-brand" : "w-2 h-2 bg-gray-300 hover:bg-gray-400"
-            }`}
+            className={`rounded-full transition-all cursor-pointer ${i === currentCard ? "w-6 h-2 bg-brand" : "w-2 h-2 bg-gray-300 hover:bg-gray-400"
+              }`}
           />
         ))}
       </div>
@@ -129,22 +203,19 @@ function FlashcardContent({ output }: { output: StudioOutput }) {
       {/* Card */}
       <button
         onClick={() => setFlipped(!flipped)}
-        className={`w-full max-w-lg min-h-[240px] rounded-2xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer shadow-sm ${
-          flipped
+        className={`w-full max-w-lg min-h-[240px] rounded-2xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer shadow-sm ${flipped
             ? "bg-brand/5 border-2 border-brand/20"
             : "bg-white border-2 border-gray-100 hover:border-gray-200 hover:shadow-md"
-        }`}
+          }`}
       >
-        <span className={`text-[11px] font-semibold uppercase tracking-wider mb-4 ${
-          flipped ? "text-brand" : "text-text-muted"
-        }`}>
+        <span className={`text-[11px] font-semibold uppercase tracking-wider mb-4 ${flipped ? "text-brand" : "text-text-muted"
+          }`}>
           {flipped ? "Answer" : "Question"}
         </span>
-        <p className={`text-center leading-relaxed ${
-          flipped
+        <p className={`text-center leading-relaxed ${flipped
             ? "text-brand text-[15px] font-medium"
             : "text-text-primary text-base font-semibold"
-        }`}>
+          }`}>
           {flipped ? card.answer : card.question}
         </p>
         <span className="text-[11px] text-text-muted mt-6">
@@ -225,19 +296,17 @@ function QuizContent({ output }: { output: StudioOutput }) {
           return (
             <div
               key={qi}
-              className={`bg-white rounded-xl shadow-sm border transition-all ${
-                showResults && answered
+              className={`bg-white rounded-xl shadow-sm border transition-all ${showResults && answered
                   ? isCorrect ? "border-green-200" : "border-red-200"
                   : answered ? "border-brand/30" : "border-gray-100"
-              }`}
+                }`}
             >
               {/* Question header */}
               <div className="px-5 pt-4 pb-3 flex items-start gap-3">
-                <span className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${
-                  showResults && answered
+                <span className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${showResults && answered
                     ? isCorrect ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                     : "bg-brand/10 text-brand"
-                }`}>
+                  }`}>
                   {qi + 1}
                 </span>
                 <p className="text-[14px] font-semibold text-text-primary leading-relaxed pt-0.5">
@@ -321,13 +390,12 @@ function QuizContent({ output }: { output: StudioOutput }) {
           </Button>
         ) : (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-8 py-6 text-center w-full max-w-xs">
-            <div className={`w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center text-xl font-bold ${
-              correctCount / questions.length >= 0.7
+            <div className={`w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center text-xl font-bold ${correctCount / questions.length >= 0.7
                 ? "bg-green-100 text-green-700"
                 : correctCount / questions.length >= 0.4
                   ? "bg-amber-100 text-amber-700"
                   : "bg-red-100 text-red-700"
-            }`}>
+              }`}>
               {Math.round((correctCount / questions.length) * 100)}
             </div>
             <p className="text-lg font-bold text-text-primary">
@@ -750,9 +818,8 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
                     key={safeSlide}
                     src={images[safeSlide]}
                     alt={`슬라이드 ${safeSlide + 1}`}
-                    className={`max-w-full max-h-[40vh] object-contain rounded-lg ${
-                      images.length > 1 ? (slideDirection === "right" ? "animate-slide-right" : "animate-slide-left") : ""
-                    }`}
+                    className={`max-w-full max-h-[40vh] object-contain rounded-lg ${images.length > 1 ? (slideDirection === "right" ? "animate-slide-right" : "animate-slide-left") : ""
+                      }`}
                   />
                   {images.length > 1 && (
                     <>
@@ -793,9 +860,8 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
                   key={isSlides ? currentSlide : 0}
                   src={images[isSlides ? currentSlide : 0]}
                   alt={output.title}
-                  className={`max-w-full object-contain rounded-lg ${regenOpen ? "max-h-[55vh]" : "max-h-[75vh]"} ${
-                    isSlides ? (slideDirection === "right" ? "animate-slide-right" : "animate-slide-left") : ""
-                  }`}
+                  className={`max-w-full object-contain rounded-lg ${regenOpen ? "max-h-[55vh]" : "max-h-[75vh]"} ${isSlides ? (slideDirection === "right" ? "animate-slide-right" : "animate-slide-left") : ""
+                    }`}
                 />
 
                 {/* Slide Navigation */}
@@ -924,9 +990,8 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
                 <button
                   key={i}
                   onClick={() => goToSlide(i)}
-                  className={`w-2 h-2 rounded-full transition-colors cursor-pointer shrink-0 ${
-                    i === (isGenerating ? safeSlide : currentSlide) ? "bg-brand" : "bg-gray-300"
-                  }`}
+                  className={`w-2 h-2 rounded-full transition-colors cursor-pointer shrink-0 ${i === (isGenerating ? safeSlide : currentSlide) ? "bg-brand" : "bg-gray-300"
+                    }`}
                 />
               ))}
             </div>

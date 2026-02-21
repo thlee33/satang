@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -68,7 +69,15 @@ export default function LoginPage() {
         </button>
 
         <p className="text-xs text-text-muted text-center mt-6">
-          계속 진행하면 서비스 약관 및 개인정보처리방침에 동의하게 됩니다.
+          계속 진행하면{" "}
+          <Link href="/terms" className="underline hover:text-text-secondary">
+            서비스 이용약관
+          </Link>{" "}
+          및{" "}
+          <Link href="/privacy" className="underline hover:text-text-secondary">
+            개인정보처리방침
+          </Link>
+          에 동의하게 됩니다.
         </p>
       </div>
     </div>

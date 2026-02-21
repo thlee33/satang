@@ -21,16 +21,16 @@ export function ThemeSelector({
   const [editingTheme, setEditingTheme] = useState<DesignThemeRow | null>(null);
 
   return (
-    <div className="overflow-hidden">
-      <label className="text-[13px] font-medium text-text-secondary block mb-2">
+    <div className="flex flex-col h-full overflow-hidden">
+      <label className="text-[14px] font-semibold text-text-primary block mb-2.5 shrink-0">
         디자인 테마
       </label>
-      <div className="flex flex-nowrap gap-2 overflow-x-auto pb-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto pb-4 flex-1 content-start pr-2 custom-scrollbar">
         {/* Auto option */}
         <button
           onClick={() => onSelect(null)}
           className={cn(
-            "flex-shrink-0 w-[100px] h-[68px] rounded-lg border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1",
+            "w-full aspect-[4/3] min-h-[80px] rounded-lg border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-1",
             selectedThemeId === null
               ? "border-brand bg-brand-faint"
               : "border-border-default hover:bg-gray-50"
@@ -54,14 +54,14 @@ export function ThemeSelector({
 
         {/* Theme cards */}
         {isLoading ? (
-          <div className="flex-shrink-0 w-[100px] h-[68px] rounded-lg border border-border-default bg-gray-50 animate-pulse" />
+          <div className="w-full aspect-[4/3] min-h-[80px] rounded-lg border border-border-default bg-gray-50 animate-pulse" />
         ) : (
           themes?.map((theme) => (
             <div key={theme.id} className="relative flex-shrink-0 group/theme">
               <button
                 onClick={() => onSelect(theme.id)}
                 className={cn(
-                  "w-[100px] h-[68px] rounded-lg border-2 transition-all cursor-pointer overflow-hidden relative",
+                  "w-full aspect-[4/3] min-h-[80px] rounded-lg border-2 transition-all cursor-pointer overflow-hidden relative group/btn",
                   selectedThemeId === theme.id
                     ? "border-brand"
                     : "border-border-default hover:border-gray-300"
@@ -115,7 +115,7 @@ export function ThemeSelector({
         {!isLoading && (
           <button
             onClick={() => { setEditingTheme(null); setShowEditor(true); }}
-            className="flex-shrink-0 w-[100px] h-[68px] rounded-lg border-2 border-dashed border-border-default hover:border-brand hover:bg-brand-faint transition-all cursor-pointer flex flex-col items-center justify-center gap-1"
+            className="w-full aspect-[4/3] min-h-[80px] rounded-lg border-2 border-dashed border-border-default hover:border-brand hover:bg-brand-faint transition-all cursor-pointer flex flex-col items-center justify-center gap-1"
           >
             <Plus className="w-4 h-4 text-text-tertiary" />
             <span className="text-[10px] font-medium text-text-tertiary">

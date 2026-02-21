@@ -171,6 +171,8 @@ export async function generateSlideImage(params: {
   language: string;
   format: string;
   userPrompt: string;
+  includePageNumber?: boolean;
+  pageNumberPosition?: string;
 }): Promise<{ imageData: string; mimeType: string }> {
   const {
     slideNumber,
@@ -185,6 +187,8 @@ export async function generateSlideImage(params: {
     language,
     format,
     userPrompt,
+    includePageNumber = false,
+    pageNumberPosition = "bottom-right",
   } = params;
 
   const languageNames: Record<string, string> = {
@@ -233,6 +237,7 @@ ${themeInstructions}Global Requirements:
 - 16:9 aspect ratio, professional presentation slide
 - Clear, readable typography with good hierarchy
 - Consistent visual style across all slides in this deck
+${includePageNumber ? `- Display page number "${slideNumber}/${totalSlides}" in small text at the ${pageNumberPosition === "top-right" ? "top-right corner" : pageNumberPosition === "bottom-center" ? "bottom-center" : "bottom-right corner"} of the slide` : ""}
 
 ${userPrompt ? `Additional instructions: ${userPrompt}` : ""}`;
 

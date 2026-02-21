@@ -41,8 +41,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { notebookId, format, language, depth, prompt, slideCount, designThemeId } =
-      await request.json();
+    const {
+      notebookId, format, language, prompt, slideCount, designThemeId,
+      includeCover = true, includeBridge = true, includePageNumber = true, pageNumberPosition = "bottom-right",
+    } = await request.json();
 
     if (!notebookId) {
       return NextResponse.json(
@@ -74,7 +76,7 @@ export async function POST(request: Request) {
         user_id: user.id,
         type: "slide_deck",
         title: `슬라이드 - ${new Date().toLocaleDateString("ko-KR")}`,
-        settings: { format, language, depth, prompt, slideCount, designThemeId },
+        settings: { format, language, prompt, slideCount, designThemeId, includeCover, includeBridge, includePageNumber, pageNumberPosition },
         generation_status: "generating",
         source_ids: sources.map((s) => s.id),
       })
@@ -129,11 +131,7 @@ export async function POST(request: Request) {
         const slideCountRange = slideCount
           ? `정확히 ${slideCount}`
           : format === "presenter"
-            ? depth === "short"
-              ? "4-5"
-              : "5-8"
-            : depth === "short"
-            ? "5-7"
+            ? "5-8"
             : "8-12";
 
         // Generate slide outline with Gemini
@@ -155,11 +153,13 @@ ${prompt ? `추가 지시사항: ${prompt}` : ""}
 ## 프레젠테이션 구조 규칙
 
 반드시 다음 흐름을 따르세요:
-1. 첫 번째 슬라이드는 type "cover" (표지)
-2. 두 번째 슬라이드는 반드시 type "toc" (목차)를 포함 — 절대 생략하지 마세요
-3. 중간 슬라이드들은 type "content" (본문) — 필요시 type "section" (섹션 구분) 사용
-4. 마지막에서 두 번째는 type "key_takeaway" (핵심 정리)
-5. 마지막 슬라이드는 type "closing" (마무리)
+${includeCover ? '1. 첫 번째 슬라이드는 type "cover" (표지)' : '(표지 없음 - 바로 본문으로 시작)'}
+${includeCover ? '2. 두 번째 슬라이드는 반드시 type "toc" (목차)를 포함 — 절대 생략하지 마세요' : '1. 첫 번째 슬라이드는 type "toc" (목차)'}
+${includeBridge ? '- 섹션이 전환되는 지점에 type "section" (브릿지 장표)을 삽입하세요' : '- type "section" (브릿지 장표)은 사용하지 마세요'}
+- 중간 슬라이드들은 type "content" (본문)
+- 마지막에서 두 번째는 type "key_takeaway" (핵심 정리)
+- 마지막 슬라이드는 type "closing" (마무리)
+${includePageNumber ? `\n## 페이지 번호\n각 슬라이드에 페이지 번호를 삽입하세요. 형식: "현재페이지/총페이지" (예: 1/${slideCount || '12'}). 위치: ${pageNumberPosition === 'top-right' ? '우측 상단' : pageNumberPosition === 'bottom-center' ? '중앙 하단' : '우측 하단'}` : ''}
 
 ## 디자인 테마
 
@@ -184,7 +184,7 @@ ${userThemePrompt
   ]
 }
 
-가능한 type 값: "cover", "toc", "section", "content", "key_takeaway", "closing"`;
+가능한 type 값: ${includeCover ? '"cover", ' : ''}"toc", ${includeBridge ? '"section", ' : ''}"content", "key_takeaway", "closing"`;
 
         const outlineText = await generateText(outlinePrompt);
 
@@ -215,6 +215,14 @@ ${userThemePrompt
           slides = [
             { type: "cover", title: "개요", content: "프레젠테이션 개요 슬라이드입니다." },
           ];
+        }
+        // 표지 없는 모드에서 cover 슬라이드 제거
+        if (!includeCover) {
+          slides = slides.filter((s) => s.type !== "cover");
+        }
+        // 브릿지 없는 모드에서 section 슬라이드 제거
+        if (!includeBridge) {
+          slides = slides.filter((s) => s.type !== "section");
         }
         // 7장 이상인데 목차가 없으면 자동 삽입
         if (slides.length >= 7 && !slides.some((s) => s.type === "toc")) {
@@ -274,6 +282,8 @@ ${userThemePrompt
             language,
             format,
             userPrompt: prompt,
+            includePageNumber,
+            pageNumberPosition,
           };
 
           // 1회 자동 재시도 로직

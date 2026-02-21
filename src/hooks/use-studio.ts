@@ -100,10 +100,13 @@ export function useGenerateSlides() {
       notebookId: string;
       format: string;
       language: string;
-      depth: string;
       prompt: string;
       slideCount?: number;
       designThemeId?: string;
+      includeCover?: boolean;
+      includeBridge?: boolean;
+      includePageNumber?: boolean;
+      pageNumberPosition?: string;
     }) => {
       const response = await fetch("/api/studio/slides", {
         method: "POST",

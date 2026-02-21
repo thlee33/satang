@@ -29,7 +29,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-[#EDE9FE]">
       <div className="w-full max-w-[400px] bg-white rounded-2xl shadow-lg p-12">
         <div className="flex flex-col items-center mb-8">
-          <Image src="/images/logo.png" alt="Satang" width={72} height={48} className="h-12 w-auto mb-3" />
+          <Image src="/images/logo_satang.png" alt="Satang" width={72} height={48} className="h-12 w-auto mb-3" />
           <h1 className="text-xl font-bold text-text-primary">Satang</h1>
           <p className="text-sm text-text-tertiary mt-1">
             달달한 AI 지식 노트북

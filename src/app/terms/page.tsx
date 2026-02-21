@@ -12,7 +12,7 @@ export default function TermsPage() {
         <div className="flex items-center gap-3 mb-10">
           <Link href="/login">
             <Image
-              src="/images/logo.png"
+              src="/images/logo_satang.png"
               alt="Satang"
               width={36}
               height={24}

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { generateChatResponse } from "@/lib/ai/gemini";
+import { buildSourceTexts } from "@/lib/utils/source-text";
 
 export async function POST(request: Request) {
   try {
@@ -39,13 +40,9 @@ export async function POST(request: Request) {
       .eq("processing_status", "completed");
 
     // Build context from sources
-    const sourceContext =
-      sources
-        ?.map(
-          (s, i) =>
-            `[소스 ${i + 1}: ${s.title}]\n${(s.extracted_text || "").slice(0, 10000)}`
-        )
-        .join("\n\n---\n\n") || "소스가 없습니다.";
+    const sourceContext = sources?.length
+      ? buildSourceTexts(sources)
+      : "소스가 없습니다.";
 
     // Get chat history
     const { data: history } = await supabase

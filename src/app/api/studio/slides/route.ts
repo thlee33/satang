@@ -2,6 +2,7 @@ import { NextResponse, after } from "next/server";
 import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { generateSlideImage, type SlideType, type DesignTheme } from "@/lib/ai/nano-banana";
 import { generateText } from "@/lib/ai/gemini";
+import { buildSourceTexts } from "@/lib/utils/source-text";
 
 async function runWithConcurrency<T>(
   tasks: (() => Promise<T>)[],
@@ -122,11 +123,7 @@ export async function POST(request: Request) {
           }
         }
 
-        const sourceTexts = sources
-          .map(
-            (s) => `[${s.title}]\n${(s.extracted_text || "").slice(0, 5000)}`
-          )
-          .join("\n\n");
+        const sourceTexts = buildSourceTexts(sources);
 
         const slideCountRange = slideCount
           ? `정확히 ${slideCount}`
@@ -144,7 +141,7 @@ export async function POST(request: Request) {
         const outlinePrompt = `다음 소스 내용을 기반으로 전문적인 프레젠테이션 슬라이드 아웃라인을 JSON으로 생성해주세요.
 
 소스 내용:
-${sourceTexts.slice(0, 15000)}
+${sourceTexts}
 
 슬라이드 수: ${slideCountRange}장
 형식: ${formatDescription}

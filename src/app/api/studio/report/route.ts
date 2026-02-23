@@ -1,6 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { generateText } from "@/lib/ai/gemini";
+import { buildSourceTexts } from "@/lib/utils/source-text";
 
 const LANGUAGE_NAMES: Record<string, string> = {
   ko: "한국어", en: "English", ja: "日本語", zh: "中文",
@@ -56,14 +57,12 @@ export async function POST(request: Request) {
 
     after(async () => {
       try {
-        const sourceTexts = sources
-          .map((s) => `[${s.title}]\n${(s.extracted_text || "").slice(0, 5000)}`)
-          .join("\n\n");
+        const sourceTexts = buildSourceTexts(sources);
 
         const reportPrompt = `다음 소스 내용을 기반으로 ${LANGUAGE_NAMES[language] || "한국어"}로 ${DETAIL_LABELS[detailLevel] || "적절한 수준으로 정리한"} 보고서를 마크다운 형식으로 작성해주세요.
 
 소스 내용:
-${sourceTexts.slice(0, 20000)}
+${sourceTexts}
 
 ${prompt ? `추가 지시사항: ${prompt}` : ""}
 

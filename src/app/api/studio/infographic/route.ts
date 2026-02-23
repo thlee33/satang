@@ -2,6 +2,7 @@ import { NextResponse, after } from "next/server";
 import { createServerSupabaseClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { generateInfographicImage } from "@/lib/ai/nano-banana";
 import { generateText } from "@/lib/ai/gemini";
+import { buildSourceTexts } from "@/lib/utils/source-text";
 
 export async function POST(request: Request) {
   try {
@@ -84,13 +85,11 @@ export async function POST(request: Request) {
         }
 
         // Summarize sources for infographic content
-        const sourceTexts = sources
-          .map((s) => `[${s.title}]\n${(s.extracted_text || "").slice(0, 5000)}`)
-          .join("\n\n");
+        const sourceTexts = buildSourceTexts(sources);
 
         console.log(`[Infographic ${outputId}] Gemini 요약 요청 중...`);
         const sourceContent = await generateText(
-          `다음 소스 내용에서 인포그래픽에 포함할 핵심 데이터 포인트, 통계, 주요 개념을 추출하세요. 글머리 기호로 정리해주세요:\n\n${sourceTexts.slice(0, 20000)}`
+          `다음 소스 내용에서 인포그래픽에 포함할 핵심 데이터 포인트, 통계, 주요 개념을 추출하세요. 글머리 기호로 정리해주세요:\n\n${sourceTexts}`
         );
         console.log(`[Infographic ${outputId}] Gemini 요약 완료`);
 

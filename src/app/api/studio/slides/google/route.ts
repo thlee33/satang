@@ -4,6 +4,40 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 const SLIDES_API = "https://slides.googleapis.com/v1/presentations";
 const API_KEY = process.env.GOOGLE_SLIDE_API_KEY;
 
+async function refreshGoogleAccessToken(refreshToken: string): Promise<string | null> {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    console.error("[GoogleSlides] GOOGLE_CLIENT_ID 또는 GOOGLE_CLIENT_SECRET 환경변수가 없습니다.");
+    return null;
+  }
+
+  try {
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: "refresh_token",
+      }),
+    });
+
+    if (!res.ok) {
+      console.error("[GoogleSlides] 토큰 갱신 실패:", await res.text());
+      return null;
+    }
+
+    const data = await res.json();
+    return data.access_token || null;
+  } catch (e) {
+    console.error("[GoogleSlides] 토큰 갱신 에러:", e);
+    return null;
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();
@@ -15,11 +49,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { imageUrls, title, providerToken } = await request.json();
+    const { imageUrls, title, providerToken: clientToken } = await request.json();
+
+    // 클라이언트에서 받은 토큰 사용, 없으면 refresh token으로 갱신
+    let providerToken = clientToken;
+    if (!providerToken) {
+      const storedRefreshToken = user.app_metadata?.google_refresh_token;
+      if (storedRefreshToken) {
+        providerToken = await refreshGoogleAccessToken(storedRefreshToken);
+      }
+    }
 
     if (!providerToken) {
       return NextResponse.json(
-        { error: "Google 인증 토큰이 필요합니다. 다시 로그인해주세요." },
+        { error: "Google 인증이 만료되었습니다. 로그아웃 후 다시 로그인해주세요." },
         { status: 401 }
       );
     }
@@ -32,7 +75,7 @@ export async function POST(request: Request) {
     }
 
     // 1. 빈 프레젠테이션 생성
-    const createRes = await fetch(`${SLIDES_API}?key=${API_KEY}`, {
+    let createRes = await fetch(`${SLIDES_API}?key=${API_KEY}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${providerToken}`,
@@ -40,6 +83,25 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({ title: title || "Slides" }),
     });
+
+    // 토큰 만료 시 refresh token으로 재시도
+    if (createRes.status === 401) {
+      const storedRefreshToken = user.app_metadata?.google_refresh_token;
+      if (storedRefreshToken) {
+        const newToken = await refreshGoogleAccessToken(storedRefreshToken);
+        if (newToken) {
+          providerToken = newToken;
+          createRes = await fetch(`${SLIDES_API}?key=${API_KEY}`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${providerToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ title: title || "Slides" }),
+          });
+        }
+      }
+    }
 
     if (!createRes.ok) {
       const err = await createRes.json();
@@ -54,11 +116,11 @@ export async function POST(request: Request) {
           { status: 403 }
         );
       }
-      // 스코프 부족 (토큰 권한 없음)
-      if (googleMsg.includes("insufficient") || googleMsg.includes("scope") || status === "UNAUTHENTICATED") {
+      // 토큰 만료 또는 권한 부족
+      if (createRes.status === 401 || googleMsg.includes("insufficient") || googleMsg.includes("scope") || status === "UNAUTHENTICATED") {
         return NextResponse.json(
-          { error: "Google Slides 권한이 없습니다. 로그아웃 후 다시 로그인해주세요.", detail: googleMsg },
-          { status: 403 }
+          { error: "Google 인증이 만료되었습니다. 로그아웃 후 다시 로그인해주세요.", detail: googleMsg },
+          { status: 401 }
         );
       }
       return NextResponse.json(

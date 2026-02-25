@@ -651,12 +651,7 @@ export function ContentViewer({ output, onClose }: ContentViewerProps) {
     try {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
-      const providerToken = session?.provider_token;
-
-      if (!providerToken) {
-        toast.error("Google 인증이 만료되었습니다. 다시 로그인해주세요.");
-        return;
-      }
+      const providerToken = session?.provider_token || null;
 
       const response = await fetch("/api/studio/slides/google", {
         method: "POST",

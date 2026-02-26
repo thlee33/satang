@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,12 +9,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Eye, ImageIcon, Trash2 } from "lucide-react";
+import { Loader2, Eye, ImageIcon, Trash2, Upload } from "lucide-react";
 import {
   useCreateDesignTheme,
   useUpdateDesignTheme,
   useDeleteDesignTheme,
   useGenerateThemePreview,
+  useAnalyzeThemeImage,
 } from "@/hooks/use-design-themes";
 import type { DesignThemeRow } from "@/lib/supabase/types";
 import { toast } from "sonner";
@@ -34,10 +35,13 @@ export function ThemeEditorDialog({
   const [prompt, setPrompt] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const createTheme = useCreateDesignTheme();
   const updateTheme = useUpdateDesignTheme();
   const deleteTheme = useDeleteDesignTheme();
   const generatePreview = useGenerateThemePreview();
+  const analyzeImage = useAnalyzeThemeImage();
 
   const isEditing = !!theme;
   const isPending = createTheme.isPending || updateTheme.isPending;
@@ -65,6 +69,22 @@ export function ThemeEditorDialog({
       setThumbnailUrl(null);
     }
   }, [theme, open]);
+
+  const handleImageUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("이미지 파일만 업로드할 수 있습니다.");
+      return;
+    }
+    try {
+      const generatedPrompt = await analyzeImage.mutateAsync(file);
+      setPrompt(generatedPrompt);
+      toast.success("이미지 스타일이 프롬프트로 변환되었습니다.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "이미지 분석 실패"
+      );
+    }
+  };
 
   const handlePreview = async () => {
     if (!prompt.trim()) {
@@ -177,19 +197,50 @@ export function ThemeEditorDialog({
 
           {/* Design Prompt */}
           <div>
-            <label className="text-[13px] font-medium text-text-secondary block mb-2">
-              디자인 프롬프트
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-[13px] font-medium text-text-secondary">
+                디자인 프롬프트
+              </label>
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload(file);
+                    e.target.value = "";
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={analyzeImage.isPending}
+                  className="h-7 text-xs gap-1.5"
+                >
+                  {analyzeImage.isPending ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      분석 중...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-3 h-3" />
+                      이미지로 프롬프트 생성
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
             <Textarea
               value={prompt}
               onChange={(e) => {
                 setPrompt(e.target.value);
-                // 프롬프트가 변경되면 기존 미리보기는 프롬프트 변경 전 상태임을 표시
-                if (thumbnailUrl && !isEditing) {
-                  // 새 테마일 때만 자동 초기화하지 않음 — 사용자가 재생성 버튼 클릭
-                }
               }}
-              placeholder={`색상, 분위기, 스타일 등 원하는 디자인을 자유롭게 설명하세요.\n\n예시:\n파란색(#4F46E5) 계열의 전문적이고 모던한 느낌\n미니멀한 레이아웃에 굵은 타이포그래피\n깔끔한 아이콘과 충분한 여백 사용`}
+              placeholder={`색상, 분위기, 스타일 등 원하는 디자인을 자유롭게 설명하세요.\n\n예시:\n파란색(#4F46E5) 계열의 전문적이고 모던한 느낌\n미니멀한 레이아웃에 굵은 타이포그래피\n깔끔한 아이콘과 충분한 여백 사용\n\n또는 위의 "이미지로 프롬프트 생성" 버튼으로 참고 이미지를 업로드하세요.`}
               className="min-h-[100px] max-h-[30vh] resize-y"
             />
           </div>

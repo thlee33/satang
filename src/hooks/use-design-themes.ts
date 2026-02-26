@@ -122,3 +122,25 @@ export function useGenerateThemePreview() {
     },
   });
 }
+
+export function useAnalyzeThemeImage() {
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch("/api/studio/theme-analyze", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "이미지 분석 실패");
+      }
+
+      const data = await response.json();
+      return data.prompt as string;
+    },
+  });
+}
